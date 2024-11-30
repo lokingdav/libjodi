@@ -1,0 +1,21 @@
+cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(libcpex_VERSION_MAJOR 1)
+set(libcpex_VERSION_MINOR 0)
+set(libcpex_VERSION_PATCH 0)
+set(libcpex_VERSION ${libcpex_VERSION_MAJOR}.${libcpex_VERSION_MINOR}.${libcpex_VERSION_PATCH})
+
+project(libcpex VERSION ${libcpex_VERSION} LANGUAGES C CXX)
+
+set(BUILD_LIBCPEX_TESTS ON CACHE BOOL OFF)
+set(BUILD_LIBCPEX_BENCHMARKS ON CACHE BOOL OFF)
+set(BUILD_LIBCPEX_PYTHON_BINDINGS ON CACHE BOOL OFF)
+
+add_subdirectory(src)
+
+if(BUILD_LIBCPEX_PYTHON_BINDINGS)
+  add_subdirectory(bindings/python)
+endif()
