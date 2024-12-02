@@ -1,9 +1,12 @@
-file(GLOB HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
+file(GLOB HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/headers/*.hpp)
 source_group("SrcHeaders" FILES ${HEADERS})
+
+file(GLOB SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+source_group("SrcFiles" FILES ${SRC_FILES})
 
 list(APPEND libcpex_sources
   ${HEADERS}
-  libcpex.cpp
+  ${SRC_FILES}
 )
 
 add_compile_options(-fno-builtin)
