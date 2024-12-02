@@ -1,13 +1,13 @@
 #ifndef LIBCPEX_H
 #define LIBCPEX_H
 
-#include "http.hpp"
-#include "oprf.hpp"
-#include "cpexdht.hpp"
-#include "groupsig.hpp"
-#include "elements.hpp"
-#include "encryption.hpp"
-#include "secret_sharing.hpp"
+#include "includes/http.hpp"
+#include "includes/oprf.hpp"
+#include "includes/cpexdht.hpp"
+#include "includes/groupsig.hpp"
+#include "includes/elements.hpp"
+#include "includes/encryption.hpp"
+#include "includes/secret_sharing.hpp"
 
 namespace libcpex {
     void hello();

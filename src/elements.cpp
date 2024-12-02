@@ -1,274 +1,270 @@
-#include "elements.hpp"
-#include <openssl/obj_mac.h>
+#include "libcpex.hpp"
 #include <openssl/sha.h>
 #include <openssl/rand.h>
 #include <stdexcept>
+#include <iostream>
 
 namespace libcpex {
-    G1::G1() : group(nullptr), point(nullptr), ctx(nullptr) {
-        initialize();
-    }
 
-    // Destructor
-    G1::~G1() {
+//////////////////////////
+// Scalar Class Methods //
+//////////////////////////
+
+Scalar::Scalar() : bn_(BN_new()) {
+    if (!bn_) throw std::runtime_error("Failed to create BIGNUM");
+}
+
+Scalar::~Scalar() {
+    clear();
+}
+
+Scalar::Scalar(const Scalar& other) : bn_(BN_new()) {
+    if (!bn_) throw std::runtime_error("Failed to create BIGNUM");
+    copyFrom(other);
+}
+
+Scalar& Scalar::operator=(const Scalar& other) {
+    if (this != &other) {
         clear();
+        bn_ = BN_new();
+        if (!bn_) throw std::runtime_error("Failed to create BIGNUM");
+        copyFrom(other);
     }
+    return *this;
+}
 
-    // Copy Constructor
-    G1::G1(const G1& other) : group(nullptr), point(nullptr), ctx(nullptr) {
-        initialize();
-        if (EC_POINT_copy(this->point, other.point) != 1) {
-            throw std::runtime_error("Failed to copy EC_POINT");
-        }
+Scalar::Scalar(Scalar&& other) noexcept : bn_(other.bn_) {
+    other.bn_ = nullptr;
+}
+
+Scalar& Scalar::operator=(Scalar&& other) noexcept {
+    if (this != &other) {
+        clear();
+        bn_ = other.bn_;
+        other.bn_ = nullptr;
     }
+    return *this;
+}
 
-    // Copy Assignment
-    G1& G1::operator=(const G1& other) {
-        if (this != &other) {
-            if (EC_POINT_copy(this->point, other.point) != 1) {
-                throw std::runtime_error("Failed to copy EC_POINT");
-            }
-        }
-        return *this;
-    }
+void Scalar::initialize() {
+    bn_ = BN_new();
+    if (!bn_) throw std::runtime_error("Failed to create BIGNUM");
+}
 
-    // Move Constructor
-    G1::G1(G1&& other) noexcept : group(other.group), point(other.point), ctx(other.ctx) {
-        other.group = nullptr;
-        other.point = nullptr;
-        other.ctx = nullptr;
-    }
+void Scalar::copyFrom(const Scalar& other) {
+    if (BN_copy(bn_, other.bn_) == nullptr)
+        throw std::runtime_error("Failed to copy BIGNUM");
+}
 
-    // Move Assignment
-    G1& G1::operator=(G1&& other) noexcept {
-        if (this != &other) {
-            clear();
-            group = other.group;
-            point = other.point;
-            ctx = other.ctx;
-
-            other.group = nullptr;
-            other.point = nullptr;
-            other.ctx = nullptr;
-        }
-        return *this;
-    }
-
-    // Initialize the EC_GROUP, EC_POINT, and BN_CTX
-    void G1::initialize() {
-        // Using secp256k1 curve
-        group = EC_GROUP_new_by_curve_name(NID_secp256k1);
-        if (group == nullptr) {
-            throw std::runtime_error("Failed to create EC_GROUP");
-        }
-
-        point = EC_POINT_new(group);
-        if (point == nullptr) {
-            EC_GROUP_free(group);
-            throw std::runtime_error("Failed to create EC_POINT");
-        }
-
-        ctx = BN_CTX_new();
-        if (ctx == nullptr) {
-            EC_POINT_free(point);
-            EC_GROUP_free(group);
-            throw std::runtime_error("Failed to create BN_CTX");
-        }
-    }
-
-    // Clear resources
-    void G1::clear() {
-        if (ctx) {
-            BN_CTX_free(ctx);
-            ctx = nullptr;
-        }
-        if (point) {
-            EC_POINT_free(point);
-            point = nullptr;
-        }
-        if (group) {
-            EC_GROUP_free(group);
-            group = nullptr;
-        }
-    }
-
-    // Static Method: Get Generator
-    G1 G1::getGenerator() {
-        G1 generator;
-        if (EC_POINT_copy(generator.point, EC_GROUP_get0_generator(generator.group)) != 1) {
-            throw std::runtime_error("Failed to copy generator point");
-        }
-        return generator;
-    }
-
-    // Static Method: Generate Random Scalar
-    BIGNUM* G1::generateRandomScalar() {
-        BIGNUM* scalar = BN_new();
-        if (scalar == nullptr) {
-            throw std::runtime_error("Failed to allocate BIGNUM for scalar");
-        }
-
-        // Using secp256k1 order
-        const EC_GROUP* group = EC_GROUP_new_by_curve_name(NID_secp256k1);
-        if (group == nullptr) {
-            BN_free(scalar);
-            throw std::runtime_error("Failed to create EC_GROUP for scalar generation");
-        }
-
-        BIGNUM* order = BN_new();
-        if (order == nullptr) {
-            EC_GROUP_free(group);
-            BN_free(scalar);
-            throw std::runtime_error("Failed to allocate BIGNUM for group order");
-        }
-
-        if (EC_GROUP_get_order(group, order, nullptr) != 1) {
-            EC_GROUP_free(group);
-            BN_free(order);
-            BN_free(scalar);
-            throw std::runtime_error("Failed to get group order");
-        }
-
-        // Generate random scalar in [1, order-1]
-        if (BN_rand_range(scalar, order) != 1) {
-            EC_GROUP_free(group);
-            BN_free(order);
-            BN_free(scalar);
-            throw std::runtime_error("Failed to generate random scalar");
-        }
-
-        // Ensure scalar is not zero
-        while (BN_is_zero(scalar)) {
-            if (BN_rand_range(scalar, order) != 1) {
-                EC_GROUP_free(group);
-                BN_free(order);
-                BN_free(scalar);
-                throw std::runtime_error("Failed to generate non-zero scalar");
-            }
-        }
-
-        EC_GROUP_free(group);
-        BN_free(order);
-        return scalar;
-    }
-
-    // Static Method: Hash to Point (Simple Try-and-Increment)
-    G1 G1::hashToPoint(const std::string& data) {
-        G1 result;
-        unsigned int counter = 0;
-        unsigned char hash_output[SHA256_DIGEST_LENGTH];
-        std::vector<unsigned char> concatenated_data;
-
-        while (true) {
-            // Concatenate data with counter
-            concatenated_data.assign(data.begin(), data.end());
-            concatenated_data.push_back(static_cast<unsigned char>(counter));
-
-            // Compute SHA-256 hash
-            SHA256(concatenated_data.data(), concatenated_data.size(), hash_output);
-
-            // Convert hash to BIGNUM
-            BIGNUM* x = BN_bin2bn(hash_output, SHA256_DIGEST_LENGTH, nullptr);
-            if (x == nullptr) {
-                throw std::runtime_error("Failed to convert hash to BIGNUM");
-            }
-
-            // Attempt to create a valid point with x-coordinate
-            if (EC_POINT_set_compressed_coordinates_GFp(result.group, result.point, x, 1, result.ctx) == 1) {
-                BN_free(x);
-                // Verify the point is on the curve
-                if (EC_POINT_is_on_curve(result.group, result.point, result.ctx) == 1) {
-                    break; // Successfully found a valid point
-                }
-            }
-
-            BN_free(x);
-            counter++;
-            if (counter == 256) {
-                throw std::runtime_error("Failed to hash to point after 256 attempts");
-            }
-        }
-
-        return result;
-    }
-
-    // Member Method: Multiply Point by Scalar
-    G1 G1::multiply(const BIGNUM* scalar) const {
-        G1 result;
-        if (EC_POINT_mul(result.group, result.point, nullptr, this->point, scalar, result.ctx) != 1) {
-            throw std::runtime_error("Failed to multiply point by scalar");
-        }
-        return result;
-    }
-
-    // Member Method: Inverse of Scalar modulo Group Order
-    BIGNUM* G1::inverseScalar(const BIGNUM* scalar) const {
-        BIGNUM* inverse = BN_new();
-        if (inverse == nullptr) {
-            throw std::runtime_error("Failed to allocate BIGNUM for inverse");
-        }
-
-        // Get group order
-        BIGNUM* order = BN_new();
-        if (order == nullptr) {
-            BN_free(inverse);
-            throw std::runtime_error("Failed to allocate BIGNUM for group order");
-        }
-
-        if (EC_GROUP_get_order(this->group, order, this->ctx) != 1) {
-            BN_free(order);
-            BN_free(inverse);
-            throw std::runtime_error("Failed to get group order");
-        }
-
-        // Compute inverse: inverse = scalar^{-1} mod order
-        if (BN_mod_inverse(inverse, scalar, order, this->ctx) == nullptr) {
-            BN_free(order);
-            BN_free(inverse);
-            throw std::runtime_error("Failed to compute inverse of scalar");
-        }
-
-        BN_free(order);
-        return inverse;
-    }
-
-    // Member Method: Serialize Point to Hex String (Uncompressed)
-    std::string G1::toHex() const {
-        char* hex = EC_POINT_point2hex(this->group, this->point, POINT_CONVERSION_UNCOMPRESSED, this->ctx);
-        if (hex == nullptr) {
-            throw std::runtime_error("Failed to serialize point to hex");
-        }
-        std::string hex_str(hex);
-        OPENSSL_free(hex);
-        return hex_str;
-    }
-
-    // Member Method: Print Coordinates
-    void G1::printCoordinates() const {
-        BIGNUM* x = BN_new();
-        BIGNUM* y = BN_new();
-        if (x == nullptr || y == nullptr) {
-            BN_free(x);
-            BN_free(y);
-            throw std::runtime_error("Failed to allocate BIGNUMs for coordinates");
-        }
-
-        if (EC_POINT_get_affine_coordinates_GFp(this->group, this->point, x, y, this->ctx) != 1) {
-            BN_free(x);
-            BN_free(y);
-            throw std::runtime_error("Failed to get affine coordinates");
-        }
-
-        char* x_hex = BN_bn2hex(x);
-        char* y_hex = BN_bn2hex(y);
-        if (x_hex && y_hex) {
-            std::cout << "Point Coordinates:\n";
-            std::cout << "X: " << x_hex << "\nY: " << y_hex << std::endl;
-        }
-
-        OPENSSL_free(x_hex);
-        OPENSSL_free(y_hex);
-        BN_free(x);
-        BN_free(y);
+void Scalar::clear() {
+    if (bn_) {
+        BN_clear_free(bn_);
+        bn_ = nullptr;
     }
 }
+
+Scalar Scalar::generateRandomScalar() {
+    Scalar scalar;
+    BIGNUM* order = BN_new();
+    BN_CTX* ctx = BN_CTX_new();
+    if (!order || !ctx)
+        throw std::runtime_error("Failed to allocate resources");
+
+    if (EC_GROUP_get_order(G1::getGroup(), order, ctx) != 1)
+        throw std::runtime_error("Failed to get group order");
+
+    if (BN_rand_range(scalar.bn_, order) != 1)
+        throw std::runtime_error("Failed to generate random scalar");
+
+    BN_free(order);
+    BN_CTX_free(ctx);
+
+    return scalar;
+}
+
+Scalar Scalar::fromHex(const std::string& hexStr) {
+    Scalar scalar;
+    if (BN_hex2bn(&scalar.bn_, hexStr.c_str()) == 0)
+        throw std::runtime_error("Failed to create scalar from hex");
+    return scalar;
+}
+
+Scalar Scalar::inverse() const {
+    Scalar inv;
+    BN_CTX* ctx = BN_CTX_new();
+    if (!ctx) throw std::runtime_error("Failed to create BN_CTX");
+
+    BIGNUM* order = BN_new();
+    if (!order)
+        throw std::runtime_error("Failed to create BIGNUM for order");
+
+    if (EC_GROUP_get_order(G1::getGroup(), order, ctx) != 1)
+        throw std::runtime_error("Failed to get group order");
+
+    if (BN_mod_inverse(inv.bn_, bn_, order, ctx) == nullptr)
+        throw std::runtime_error("Failed to compute inverse");
+
+    BN_free(order);
+    BN_CTX_free(ctx);
+
+    return inv;
+}
+
+std::string Scalar::toHex() const {
+    char* hexStr = BN_bn2hex(bn_);
+    if (!hexStr) throw std::runtime_error("Failed to convert BIGNUM to hex");
+    std::string result(hexStr);
+    OPENSSL_free(hexStr);
+    return result;
+}
+
+const BIGNUM* Scalar::getBn() const {
+    return bn_;
+}
+
+///////////////////////
+// G1 Class Methods //
+///////////////////////
+
+EC_GROUP* G1::getGroup() {
+    static EC_GROUP* group = nullptr;
+    if (!group) {
+        group = EC_GROUP_new_by_curve_name(NID_secp256k1);
+        if (!group) throw std::runtime_error("Failed to create EC_GROUP");
+    }
+    return group;
+}
+
+G1::G1() : point_(nullptr), ctx_(nullptr) {
+    initialize();
+}
+
+G1::~G1() {
+    clear();
+}
+
+void G1::initialize() {
+    ctx_ = BN_CTX_new();
+    if (!ctx_) throw std::runtime_error("Failed to create BN_CTX");
+
+    point_ = EC_POINT_new(getGroup());
+    if (!point_) throw std::runtime_error("Failed to create EC_POINT");
+}
+
+void G1::clear() {
+    if (point_) {
+        EC_POINT_free(point_);
+        point_ = nullptr;
+    }
+    if (ctx_) {
+        BN_CTX_free(ctx_);
+        ctx_ = nullptr;
+    }
+}
+
+G1::G1(const G1& other) {
+    initialize();
+    copyFrom(other);
+}
+
+G1& G1::operator=(const G1& other) {
+    if (this != &other) {
+        clear();
+        initialize();
+        copyFrom(other);
+    }
+    return *this;
+}
+
+G1::G1(G1&& other) noexcept
+    : point_(other.point_), ctx_(other.ctx_) {
+    other.point_ = nullptr;
+    other.ctx_ = nullptr;
+}
+
+G1& G1::operator=(G1&& other) noexcept {
+    if (this != &other) {
+        clear();
+        point_ = other.point_;
+        ctx_ = other.ctx_;
+
+        other.point_ = nullptr;
+        other.ctx_ = nullptr;
+    }
+    return *this;
+}
+
+void G1::copyFrom(const G1& other) {
+    if (EC_POINT_copy(point_, other.point_) != 1)
+        throw std::runtime_error("Failed to copy EC_POINT");
+}
+
+G1 G1::getGenerator() {
+    G1 gen;
+    const EC_POINT* generator = EC_GROUP_get0_generator(getGroup());
+    if (EC_POINT_copy(gen.point_, generator) != 1)
+        throw std::runtime_error("Failed to get generator point");
+    return gen;
+}
+
+G1 G1::hashToPoint(const std::string& data) {
+    G1 point;
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256(reinterpret_cast<const unsigned char*>(data.c_str()), data.size(), hash);
+    BIGNUM* x = BN_bin2bn(hash, SHA256_DIGEST_LENGTH, nullptr);
+    if (!x) throw std::runtime_error("Failed to create BIGNUM from hash");
+
+    // Try to find a valid point on the curve
+    int y_bit = 0;
+    while (true) {
+        if (EC_POINT_set_compressed_coordinates_GFp(getGroup(), point.point_, x, y_bit, point.ctx_) == 1) {
+            if (EC_POINT_is_on_curve(getGroup(), point.point_, point.ctx_) == 1) {
+                break;
+            }
+        }
+        // Increment x and try again
+        if (BN_add_word(x, 1) != 1)
+            throw std::runtime_error("Failed to increment BIGNUM");
+    }
+
+    BN_free(x);
+    return point;
+}
+
+G1 G1::operator*(const Scalar& scalar) const {
+    G1 result;
+    if (EC_POINT_mul(getGroup(), result.point_, NULL, point_, scalar.getBn(), result.ctx_) != 1)
+        throw std::runtime_error("Scalar multiplication failed");
+    return result;
+}
+
+
+G1 G1::operator/(const Scalar& scalar) const {
+    Scalar invScalar = scalar.inverse();
+    return (*this) * invScalar;
+}
+
+std::string G1::toHex() const {
+    char* hex = EC_POINT_point2hex(getGroup(), point_, POINT_CONVERSION_UNCOMPRESSED, ctx_);
+    if (!hex) throw std::runtime_error("Failed to convert point to hex");
+    std::string result(hex);
+    OPENSSL_free(hex);
+    return result;
+}
+
+void G1::printCoordinates() const {
+    BIGNUM* x = BN_new();
+    BIGNUM* y = BN_new();
+    if (!x || !y) throw std::runtime_error("Failed to create BIGNUMs");
+    if (EC_POINT_get_affine_coordinates_GFp(getGroup(), point_, x, y, ctx_) != 1)
+        throw std::runtime_error("Failed to get point coordinates");
+    char* x_hex = BN_bn2hex(x);
+    char* y_hex = BN_bn2hex(y);
+    std::cout << "X: " << x_hex << "\nY: " << y_hex << std::endl;
+    OPENSSL_free(x_hex);
+    OPENSSL_free(y_hex);
+    BN_free(x);
+    BN_free(y);
+}
+
+} // namespace libcpex
