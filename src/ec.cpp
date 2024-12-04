@@ -41,7 +41,7 @@ namespace libcpex {
         return memcmp(s1.sdata, s2.sdata, sizeof(blst_scalar)) == 0;
     }
 
-    blst_scalar Scalar::GetScalarData() {
+    blst_scalar Scalar::GetScalarData() const {
         return *this->sdata;
     }
 
@@ -67,12 +67,12 @@ namespace libcpex {
         return point;
     }
 
-    G1Element Point::GetPointData() {
+    G1Element Point::GetElement() const {
         return this->p;
     }
 
-    Point operator*(Scalar& scalar, Point& point) {
-        Point ans(scalar.GetScalarData() * point.GetPointData());
+    Point operator*(const Scalar& scalar, const Point& point) {
+        Point ans(scalar.GetScalarData() * point.GetElement());
         return ans;
     }
 
@@ -80,9 +80,14 @@ namespace libcpex {
         return scalar * point;
     }
 
-    bool operator==(Point& p1, Point &p2) {
-        p1.GetPointData().CheckValid();
-        p2.GetPointData().CheckValid();
-        return p1.GetPointData() == p2.GetPointData();
+    void Point::CheckValid() const {
+        this->p.CheckValid();
     }
+
+    bool operator==(const Point &p1, const Point &p2) {
+        p1.CheckValid();
+        p2.CheckValid();
+        return p1.GetElement() == p2.GetElement();
+    }
+
 } // namespace libcpex

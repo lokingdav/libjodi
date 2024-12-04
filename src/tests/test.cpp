@@ -31,7 +31,7 @@ SCENARIO("Points are on an elliptic curve") {
 
         WHEN("it's hashed to a point on the curve") {
             Point p1 = Point::HashToPoint(msg);
-            REQUIRE_NOTHROW(p1.GetPointData().CheckValid());
+            REQUIRE_NOTHROW(p1.CheckValid());
 
             THEN("hashing should be deterministic") {
                 Point p2 = Point::HashToPoint(msg);
@@ -39,9 +39,8 @@ SCENARIO("Points are on an elliptic curve") {
             }
 
             THEN("it should be multiplied by a scalar or inverse scalar") {
-                Scalar scalar = Scalar::Random();
-                Point p2 = scalar.Inverse() * (scalar * p1);
-                REQUIRE(p1 == p2);
+                Scalar s = Scalar::Random();
+                REQUIRE(p1 == s.Inverse() * (s * p1));
             }
         }
     }

@@ -14,7 +14,7 @@ namespace libcpex {
             static Scalar Deserialize(Bytes scalar);
             Bytes Serialize();
             Scalar Inverse();
-            blst_scalar GetScalarData();
+            blst_scalar GetScalarData() const;
 
             friend bool operator==(const Scalar &s1, const Scalar &s2);
 
@@ -31,11 +31,13 @@ namespace libcpex {
             static Point Deserialize(Bytes point);
             Bytes Serialize();
 
-            G1Element GetPointData();
+            G1Element GetElement() const;
+
+            void CheckValid() const;
 
             friend Point operator*(const Point &p, const Scalar &s);
             friend Point operator*(const Scalar &s, const Point &p);
-            friend bool operator==(Point &p1, Point &p2);
+            friend bool operator==(const Point &p1, const Point &p2);
         private:
             G1Element p;
     };
