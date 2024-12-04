@@ -6,7 +6,8 @@
 #include <map>
 #include <curl/curl.h>
 
-using namespace std;
+using std::map;
+using std::thread;
 
 namespace libcpex {
     struct Request {

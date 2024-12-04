@@ -2,12 +2,15 @@
 #define OPRF_HPP
 
 #include "base.hpp"
+#include "includes/ec.hpp"
 
 namespace libcpex {
-    class ObliviousPRF {
+    class OPRF {
         public:
-            ObliviousPRF();
-            Bytes evaluate(Bytes key, Bytes x);
+            OPRF();
+            Point Mask(string& msg, Scalar* out);
+            Bytes Evaluate(Bytes key, Bytes point);
+            Bytes Evaluate(Scalar key, Bytes point);
     };
 }
 

@@ -1,12 +1,12 @@
 #ifndef BASE_HPP
 #define BASE_HPP
 
-#include <iostream>
-#include <string>
-#include <vector>
-#include <cstdint>
+#include "bls.hpp"
 
-using namespace std;
+using namespace bls;
+
+using std::string;
+using std::vector;
 
 namespace libcpex {
     typedef vector<uint8_t> Bytes;
