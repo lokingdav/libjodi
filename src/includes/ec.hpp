@@ -16,6 +16,8 @@ namespace libcpex {
             Scalar Inverse();
             blst_scalar GetScalarData();
 
+            friend bool operator==(const Scalar &s1, const Scalar &s2);
+
         private:
             blst_scalar* sdata;
     };

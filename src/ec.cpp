@@ -38,6 +38,12 @@ namespace libcpex {
         return scalar;
     }
 
+    bool operator==(const Scalar& s1, const Scalar &s2) {
+        s1.CheckKeyData();
+        s2.CheckKeyData();
+        return memcmp(s1.sdata, s2.sdata, sizeof(blst_scalar)) == 0;
+    }
+
     blst_scalar Scalar::GetScalarData() {
         return *this->sdata;
     }
