@@ -1,7 +1,7 @@
 #include <chrono>
 
 #include <catch2/catch_test_macros.hpp>
-#include "libcpex.hpp"
+#include "../libcpex.hpp"
 
 using namespace libcpex;
 

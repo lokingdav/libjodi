@@ -1,4 +1,4 @@
-#include <openssl/rand.h>
+#include "sodium/randombytes.h"
 #include "libcpex.hpp"
 
 namespace libcpex {
@@ -11,11 +11,7 @@ namespace libcpex {
     
     Scalar Scalar::Random() {
         Bytes seed(Scalar::SIZE);
-
-        if (RAND_bytes(seed.data(), Scalar::SIZE) != 1) {
-            throw std::runtime_error("Cant generate seed for Scalar");
-        }
-
+        randombytes_buf(seed.data(), Scalar::SIZE);
         return Scalar::Deserialize(seed);
     }
 
@@ -34,6 +30,7 @@ namespace libcpex {
 
     Scalar Scalar::Inverse() {
         Scalar scalar;
+        this->CheckKeyData();
         blst_sk_inverse(scalar.sdata, this->sdata);
         return scalar;
     }
