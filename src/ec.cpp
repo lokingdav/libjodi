@@ -1,5 +1,5 @@
-#include "libcpex.hpp"
 #include <openssl/rand.h>
+#include "libcpex.hpp"
 
 namespace libcpex {
     void Scalar::CheckKeyData() const {
