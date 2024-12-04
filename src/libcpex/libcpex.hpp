@@ -10,7 +10,7 @@
 #include "includes/secret_sharing.hpp"
 
 namespace libcpex {
-    void hello();
+    void print(string message);
 
     Bytes GenerateCallId(string callDetails, vector<string> servers);
     void PublishMessage(Bytes callId, Bytes msg, Bytes gsk);
