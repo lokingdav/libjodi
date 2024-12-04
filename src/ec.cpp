@@ -82,4 +82,10 @@ namespace libcpex {
     Point operator*(const Point& point, const Scalar &scalar) {
         return scalar * point;
     }
+
+    bool operator==(Point& p1, Point &p2) {
+        p1.GetPointData().CheckValid();
+        p2.GetPointData().CheckValid();
+        return p1.GetPointData() == p2.GetPointData();
+    }
 } // namespace libcpex

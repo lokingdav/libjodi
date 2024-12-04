@@ -35,6 +35,7 @@ namespace libcpex {
 
             friend Point operator*(const Point &p, const Scalar &s);
             friend Point operator*(const Scalar &s, const Point &p);
+            friend bool operator==(Point &p1, Point &p2);
         private:
             G1Element p;
     };
