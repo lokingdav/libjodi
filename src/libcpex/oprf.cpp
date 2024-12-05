@@ -33,14 +33,15 @@ namespace libcpex {
         unsigned char rand_scalar[crypto_core_ristretto255_SCALARBYTES];
         unsigned char rand_point[crypto_core_ristretto255_BYTES];
         unsigned char mask[crypto_core_ristretto255_BYTES];
+        
         crypto_core_ristretto255_scalar_random(rand_scalar);
         crypto_scalarmult_ristretto255_base(rand_point, rand_scalar);
         crypto_core_ristretto255_add(mask, p_msg, rand_point);
 
-        return OPRF_Blinded(
-            Bytes(mask, mask + sizeof mask), 
-            Bytes(rand_scalar, rand_scalar + sizeof rand_scalar)
-        );
+        OPRF_Blinded out;
+        out.mask = Bytes(mask, mask + sizeof mask);
+        out.sk = Bytes(rand_scalar, rand_scalar + sizeof rand_scalar);
+        return out;
     }
 
     OPRF_BlindedEval OPRF::Evaluate(const OPRF_Keypair& keypair, const Bytes& x) {
@@ -68,7 +69,10 @@ namespace libcpex {
         unsigned char pk_neg_sk[crypto_core_ristretto255_BYTES];
 
         crypto_core_ristretto255_scalar_negate(neg_sk, skchar);
-        crypto_scalarmult_ristretto255(pk_neg_sk, neg_sk, pkchar);
+        
+        if (crypto_scalarmult_ristretto255(pk_neg_sk, neg_sk, pkchar) != 0) {
+            panic("Executing crypto_scalarmult_ristretto255() failed");
+        }
 
         unsigned char out[crypto_core_ristretto255_BYTES];
         crypto_core_ristretto255_add(out, fxchar, pk_neg_sk);

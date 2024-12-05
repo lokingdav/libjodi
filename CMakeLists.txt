@@ -54,6 +54,8 @@ if(BUILD_LIBCPEX_TESTS)
 
   file(GLOB TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/*.cpp)
   source_group("TestSrcFiles" FILES ${TEST_SRC})
+  
+  message(STATUS "TEST_SRC: ${TEST_SRC}")
 
   add_executable(cpextest ${TEST_SRC})
   target_include_directories(cpextest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/tests)

@@ -11,6 +11,13 @@ namespace libcpex {
         }
     }
 
+    void printBytes(Bytes inp) {
+        for (auto x: inp) {
+            std::cout << static_cast<int>(x) << ", ";
+        }
+        print("");
+    }
+
     void panic(string message) {
         throw std::runtime_error(message);
     }
