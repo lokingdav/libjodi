@@ -7,8 +7,6 @@ namespace libcpex {
     class SecretSharing {
         public:
             SecretSharing();
-            static vector<Bytes> split(vector<uint8_t>secret, int n, int t);
-            static vector<uint8_t>combine(vector<Bytes> shares);
     };
 }
 

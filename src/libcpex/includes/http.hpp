@@ -3,10 +3,8 @@
 
 #include "base.hpp"
 #include <thread>
-#include <map>
 #include <curl/curl.h>
 
-using std::map;
 using std::thread;
 
 namespace libcpex {

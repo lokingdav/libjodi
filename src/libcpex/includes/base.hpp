@@ -1,13 +1,20 @@
 #ifndef BASE_HPP
 #define BASE_HPP
 
-#include "bls.hpp"
-
-using namespace bls;
+#include <iostream>
+#include <vector>
+#include <map>
 
 using std::string;
 using std::vector;
+using std::tuple;
+using std::map;
 
-namespace libcpex {}
+typedef vector<unsigned char> Bytes;
+typedef map<std::string, Bytes> BytesMap;
+
+namespace libcpex {
+
+}
 
 #endif // BASE_HPP
