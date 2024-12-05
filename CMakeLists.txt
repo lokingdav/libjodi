@@ -26,6 +26,17 @@ source_group("CPeXSrcHeaders" FILES ${LIB_HEADERS})
 file(GLOB LIB_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/libcpex/*.cpp)
 source_group("CPeXSrcFiles" FILES ${LIB_SRC_FILES})
 
+add_library(sss STATIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/libs/sss/sss.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/libs/sss/randombytes.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/libs/sss/hazmat.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/libs/sss/tweetnacl.c
+)
+target_include_directories(sss PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/libs/sss)
+target_link_libraries(sss PUBLIC sodium)  # sss depends on libsodium
+target_compile_definitions(sss PRIVATE HAVE_LIBSODIUM=1)
+
+
 set(libcpex_sources
   ${LIB_HEADERS}
   ${LIB_SRC_FILES}
@@ -35,6 +46,9 @@ add_library(libcpex STATIC ${libcpex_sources})
 target_include_directories(libcpex PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src/libcpex
 )
+
+target_link_libraries(libcpex PRIVATE sss)
+target_link_libraries(libcpex PUBLIC sodium)
 
 if(BUILD_LIBCPEX_BENCHMARKS)
   file(GLOB BENCH_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/bench/*.cpp)

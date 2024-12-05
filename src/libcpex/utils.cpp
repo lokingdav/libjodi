@@ -70,4 +70,11 @@ namespace libcpex {
 
         return decoded;
     }
+
+    Bytes Utils::RemoveTrailingZeroes(Bytes &data) {
+        while (!data.empty() && data.back() == 0) {
+            data.pop_back();
+        }
+        return data;
+    }
 }
