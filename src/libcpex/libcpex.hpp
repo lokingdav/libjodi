@@ -5,7 +5,6 @@
 #include "includes/oprf.hpp"
 #include "includes/cpexdht.hpp"
 #include "includes/groupsig.hpp"
-#include "includes/ec.hpp"
 #include "includes/encryption.hpp"
 #include "includes/secret_sharing.hpp"
 
