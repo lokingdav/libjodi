@@ -5,10 +5,13 @@ namespace libcpex {
         std::cout << message << std::endl;
     }
 
-    void printlist(vector<uint8_t> message) {
+    void printlist(Bytes message) {
         for (auto x: message) {
-            std::cout << static_cast<int>(x) << ",";
+            std::cout << static_cast<int>(x) << std::endl;
         }
-        print("");
+    }
+
+    void panic(string message) {
+        throw std::runtime_error(message);
     }
 }

@@ -3,9 +3,18 @@
 
 #include <iostream>
 #include <vector>
-#include <cstring>
+#include <map>
 
 using std::string;
 using std::vector;
+using std::tuple;
+using std::map;
+
+typedef vector<unsigned char> Bytes;
+typedef map<std::string, Bytes> BytesMap;
+
+namespace libcpex {
+
+}
 
 #endif // BASE_HPP

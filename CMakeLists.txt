@@ -41,7 +41,7 @@ if(BUILD_LIBCPEX_BENCHMARKS)
   source_group("BenchSrcFiles" FILES ${BENCH_SRC})
   add_executable(cpexbench ${BENCH_SRC})
   target_include_directories(cpexbench PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/bench)  
-  target_link_libraries(cpexbench PRIVATE libcpex)
+  target_link_libraries(cpexbench PRIVATE libcpex sodium)
 endif()
 
 if(BUILD_LIBCPEX_TESTS)
