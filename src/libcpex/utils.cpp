@@ -10,6 +10,26 @@ namespace libcpex {
         return Bytes(data.begin(), data.end());
     }
 
+    Bytes Utils::Sha160(Bytes const &preimage) {
+        Bytes hash(20);
+
+        if (crypto_generichash(hash.data(), hash.size(), preimage.data(), preimage.size(), nullptr, 0) != 0) {
+            panic("Failed to compute SHA-1 hash");
+        }
+
+        return hash;
+    }
+
+    Bytes Utils::Sha256(Bytes const &preimage) {
+        Bytes hash(crypto_hash_sha256_BYTES);
+
+        if (crypto_hash_sha256(hash.data(), preimage.data(), preimage.size()) != 0) {
+            panic("Failed to compute SHA-256 hash");
+        }
+
+        return hash;
+    }
+
     string Utils::EncodeBase64(Bytes const & data) {
         size_t encodedLength = sodium_base64_encoded_len(data.size(), sodium_base64_VARIANT_ORIGINAL);
         char *encoded = new char[encodedLength];

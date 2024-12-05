@@ -30,5 +30,27 @@ SCENARIO("Util helper functions are useful") {
                 REQUIRE(msg == Utils::BytesToString(b64d));
             }
         }
+
+        WHEN("hashed with sha1 (20 bytes output)") {
+            Bytes sha1bytes1 = Utils::Sha160(Utils::StringToBytes(msg));
+
+            REQUIRE(sha1bytes1.size() == 20);
+
+            THEN("hashing again should be deterministic") {
+                Bytes sha1bytes2 = Utils::Sha160(Utils::StringToBytes(msg));
+                REQUIRE(sha1bytes1 == sha1bytes2);
+            }
+        }
+
+        WHEN("hashed with sha256 (32 bytes output)") {
+            Bytes sha256bytes1 = Utils::Sha256(Utils::StringToBytes(msg));
+
+            REQUIRE(sha256bytes1.size() == 32);
+
+            THEN("hashing again should be deterministic") {
+                Bytes sha1bytes2 = Utils::Sha256(Utils::StringToBytes(msg));
+                REQUIRE(sha256bytes1 == sha1bytes2);
+            }
+        }
     }
 }
