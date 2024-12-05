@@ -9,8 +9,8 @@ namespace libcpex {
         public:
             OPRF();
             Point Mask(string& msg, Scalar* out);
-            Bytes Evaluate(Bytes key, Bytes point);
-            Bytes Evaluate(Scalar key, Bytes point);
+            vector<uint8_t>Evaluate(vector<uint8_t>key, vector<uint8_t>point);
+            vector<uint8_t>Evaluate(Scalar key, vector<uint8_t>point);
     };
 }
 

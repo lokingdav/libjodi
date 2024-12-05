@@ -21,9 +21,9 @@ namespace libcpex {
             CpexDHT();
             CpexDHT(vector<CpexNode> nodes);
             vector<CpexNode> FindNodes(string key, int replication_params = 3);
-            vector<CpexNode> FindNodes(Bytes key, int replication_params = 3);
+            vector<CpexNode> FindNodes(vector<uint8_t>key, int replication_params = 3);
             CpexNode Ping(string key);
-            CpexNode Ping(Bytes key);
+            CpexNode Ping(vector<uint8_t>key);
     };
 }
 

@@ -8,8 +8,6 @@ using namespace bls;
 using std::string;
 using std::vector;
 
-namespace libcpex {
-    typedef vector<uint8_t> Bytes;
-}
+namespace libcpex {}
 
 #endif // BASE_HPP

@@ -7,8 +7,8 @@ namespace libcpex {
     class Groupsig {
         public:
             Groupsig();
-            Bytes sign(Bytes sk, Bytes msg);
-            bool verify(Bytes pk, Bytes signature, Bytes msg);
+            vector<uint8_t>sign(vector<uint8_t>sk, vector<uint8_t>msg);
+            bool verify(vector<uint8_t>pk, vector<uint8_t>signature, vector<uint8_t>msg);
     };
 }
 

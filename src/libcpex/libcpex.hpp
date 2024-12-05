@@ -11,10 +11,10 @@
 
 namespace libcpex {
     void print(string message);
-
-    Bytes GenerateCallId(string callDetails, vector<string> servers);
-    void PublishMessage(Bytes callId, Bytes msg, Bytes gsk);
-    void RetrieveMessage(Bytes callId, Bytes gsk);
+    void printlist(vector<uint8_t> message);
+    vector<uint8_t>GenerateCallId(string callDetails, vector<string> servers);
+    void PublishMessage(vector<uint8_t>callId, vector<uint8_t>msg, vector<uint8_t>gsk);
+    void RetrieveMessage(vector<uint8_t>callId, vector<uint8_t>gsk);
 }
 
 #endif // LIBCPEX_H

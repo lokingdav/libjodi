@@ -6,30 +6,28 @@ namespace libcpex {
         public:
             static const size_t SIZE = 32;
 
-            Scalar() = default;
-            Scalar(blst_scalar* sd): sdata(sd) {};
+            Scalar();
+            Scalar(PrivateKey sk): sdata(sk) {};
 
             static Scalar Random();
-            void CheckKeyData() const;
-            static Scalar Deserialize(Bytes scalar);
-            Bytes Serialize();
+            static Scalar Deserialize(vector<uint8_t>scalar);
+            vector<uint8_t>Serialize();
             Scalar Inverse();
-            blst_scalar GetScalarData() const;
+            PrivateKey GetScalarData() const;
 
             friend bool operator==(const Scalar &s1, const Scalar &s2);
 
         private:
-            blst_scalar* sdata;
+            PrivateKey sdata;
     };
 
     class Point {
         public:
-            Point() = default;
             Point(G1Element g1el): p(g1el) {};
             static Point HashToPoint(string message);
-            static Point HashToPoint(Bytes message);
-            static Point Deserialize(Bytes point);
-            Bytes Serialize();
+            static Point HashToPoint(vector<uint8_t>message);
+            static Point Deserialize(vector<uint8_t>point);
+            vector<uint8_t>Serialize();
 
             G1Element GetElement() const;
 

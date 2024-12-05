@@ -1,66 +1,73 @@
-#include "sodium/randombytes.h"
+#include "sodium.h"
 #include "libcpex.hpp"
 
 namespace libcpex {
-    void Scalar::CheckKeyData() const {
-        if (this->sdata == nullptr) {
-            throw std::runtime_error(
-                "PrivateKey::CheckKeyData keydata not initialized");
-        }
-    }
-    
     Scalar Scalar::Random() {
-        Bytes seed(Scalar::SIZE);
-        randombytes_buf(seed.data(), Scalar::SIZE);
+        if (sodium_init() < 0) {
+            throw std::runtime_error("libsodium failed to initialize");
+        }
+        vector<uint8_t> seed(Scalar::SIZE);
+        for (auto i = 0; i < Scalar::SIZE; i++) {
+            seed[i] = static_cast<uint8_t>(randombytes_uniform(256));
+        }
         return Scalar::Deserialize(seed);
     }
 
-    Bytes Scalar::Serialize() {
-        this->CheckKeyData();
-        vector<uint8_t> data(Scalar::SIZE);
-        blst_bendian_from_scalar(data.data(), this->sdata);
-        return data;
+    vector<uint8_t>Scalar::Serialize() {
+        return this->sdata.Serialize();
     }
 
-    Scalar Scalar::Deserialize(Bytes data) {
-        Scalar s;
-        blst_scalar_from_bendian(s.sdata, data.data());
+    Scalar Scalar::Deserialize(vector<uint8_t>data) {
+        Scalar s(PrivateKey::FromBytes(data, true));
         return s;
     }
 
     Scalar Scalar::Inverse() {
-        Scalar scalar;
-        this->CheckKeyData();
-        blst_sk_inverse(scalar.sdata, this->sdata);
+        // serialize private key into bytes
+        vector<uint8_t>keydata = sdata.Serialize();
+
+        //import blst_scalar from bytes
+        blst_scalar* bs = Util::SecAlloc<blst_scalar>(1);
+        blst_scalar_from_bendian(bs, keydata.data());
+
+        // inverse the blst_scalar
+        blst_scalar* ret = Util::SecAlloc<blst_scalar>(1);
+        blst_sk_inverse(ret, bs);
+
+        // free initial blst_scalar
+        Util::SecFree(bs);
+
+        // convert ret to vector<uint8_t>then to private key object
+        blst_bendian_from_scalar(keydata.data(), ret);
+        Scalar scalar(PrivateKey::FromBytes(keydata));
         return scalar;
     }
 
     bool operator==(const Scalar& s1, const Scalar &s2) {
-        s1.CheckKeyData();
-        s2.CheckKeyData();
-        return memcmp(s1.sdata, s2.sdata, sizeof(blst_scalar)) == 0;
+        return s1.sdata == s2.sdata;
     }
 
-    blst_scalar Scalar::GetScalarData() const {
-        return *this->sdata;
+    PrivateKey Scalar::GetScalarData() const {
+        return this->sdata;
     }
 
-    Point Point::HashToPoint(Bytes message) {
-        Point point;
-        point.p = G1Element::FromMessage(message, message.data(), message.size());
+    Point Point::HashToPoint(vector<uint8_t>message) {
+        Point point(
+            G1Element::FromMessage(message, message.data(), message.size())
+        );
         return point;
     }
 
     Point Point::HashToPoint(string message) {
-        Bytes msg(message.begin(), message.end());
+        vector<uint8_t>msg(message.begin(), message.end());
         return Point::HashToPoint(msg);
     }
 
-    Bytes Point::Serialize() {
+    vector<uint8_t>Point::Serialize() {
         return this->p.Serialize();
     }
 
-    Point Point::Deserialize(Bytes data)
+    Point Point::Deserialize(vector<uint8_t>data)
     {
         Point point(G1Element::FromBytes(data));
 
