@@ -15,6 +15,8 @@ namespace libcpex {
 
             static string EncodeBase64(Bytes const & data);
             static Bytes DecodeBase64(string const & data);
+
+            static Bytes Xor(Bytes const & x, Bytes const & y);
     };
 }
 

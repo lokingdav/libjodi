@@ -52,5 +52,18 @@ SCENARIO("Util helper functions are useful") {
                 REQUIRE(sha256bytes1 == sha1bytes2);
             }
         }
+
+        WHEN("xor'ed with another message") {
+            string key = "David L. Adei";
+            Bytes mbytes = Utils::StringToBytes(msg);
+            Bytes kBytes = Utils::StringToBytes(key);
+            Bytes ctx = Utils::Xor(mbytes, kBytes);
+            REQUIRE(ctx.size() == std::max(mbytes.size(), kBytes.size()));
+
+            THEN("xor'ing back should produce message") {
+                Bytes k = Utils::Xor(ctx, mbytes);
+                REQUIRE(k == kBytes);
+            }
+        }
     }
 }

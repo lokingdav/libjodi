@@ -30,6 +30,19 @@ namespace libcpex {
         return hash;
     }
 
+    Bytes Utils::Xor(Bytes const & x, Bytes const & y) {
+        size_t maxLength = std::max(x.size(), y.size());
+        Bytes result(maxLength, 0);
+
+        for (size_t i = 0; i < maxLength; ++i) {
+            unsigned char byte1 = (i < x.size()) ? x[i] : 0; 
+            unsigned char byte2 = (i < y.size()) ? y[i] : 0;
+            result[i] = byte1 ^ byte2;
+        }
+
+        return result;
+    }
+
     string Utils::EncodeBase64(Bytes const & data) {
         size_t encodedLength = sodium_base64_encoded_len(data.size(), sodium_base64_VARIANT_ORIGINAL);
         char *encoded = new char[encodedLength];
