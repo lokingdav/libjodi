@@ -27,7 +27,7 @@ void BenchBlinding() {
     for (auto i = 0; i < numIters; i++) {
         auto blinded = OPRF::Blind(&callDetails);
     }
-    endTimer("OPRF Blinding", start, numIters);
+    endTimer("OPRF::Blind", start, numIters);
 }
 
 void BenchEvaluation() {
@@ -38,7 +38,7 @@ void BenchEvaluation() {
     for (auto i = 0; i < numIters; i++) {
         auto eval = OPRF::Evaluate(keypair, blinded.mask);
     }
-    endTimer("OPRF Evaluation", start, numIters);
+    endTimer("OPRF::Evaluate", start, numIters);
 }
 
 void BenchUnblinding() {
@@ -50,14 +50,41 @@ void BenchUnblinding() {
     for (auto i = 0; i < numIters; i++) {
         Bytes label = OPRF::Unblind(eval, blinded.sk);
     }
-    endTimer("OPRF Unblinding", start, numIters);
+    endTimer("OPRF::Unblind", start, numIters);
+}
+
+void BenchSecretSharingSplit() {
+    auto n = 3, t = 2;
+    Bytes secret = Utils::RandomBytes(32);
+    auto start = startTimer();
+    for (auto i = 0; i < numIters; i++) {
+        vector<Bytes> shares = SecretSharing::Split(secret, n, t);
+    }
+    endTimer("SecretSharing::Split", start, numIters);
+}
+
+void BenchSecretSharingCombine() {
+    auto n = 3, t = 2;
+    Bytes secret = Utils::RandomBytes(32);
+    vector<Bytes> shares = SecretSharing::Split(secret, n, t);
+
+    auto start = startTimer();
+    for (auto i = 0; i < numIters; i++) {
+        Bytes reconsecret = SecretSharing::Combine(shares, t);
+    }
+    endTimer("SecretSharing::Combine", start, numIters);
 }
 
 int main(int argc, char* argv[])
 {
+    // OPRF
     BenchBlinding();
     BenchEvaluation();
     BenchUnblinding();
+
+    // Secret Sharing
+    BenchSecretSharingSplit();
+    BenchSecretSharingCombine();
 
     return 0;
 }
