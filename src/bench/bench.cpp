@@ -75,6 +75,29 @@ void BenchSecretSharingCombine() {
     endTimer("SecretSharing::Combine", start, numIters);
 }
 
+void BenchEncryption() {
+    Bytes key = Encryption::Keygen();
+    Bytes plaintext = Utils::RandomBytes(256); // 2KB
+
+    auto start = startTimer();
+    for (auto i = 0; i < numIters; i++) {
+        Bytes ctx = Encryption::Encrypt(key, plaintext);
+    }
+    endTimer("Encryption::Encrypt", start, numIters);
+}
+
+void BenchDecryption() {
+    Bytes key = Encryption::Keygen();
+    Bytes plaintext = Utils::RandomBytes(256); // 2KB
+    Bytes ctx = Encryption::Encrypt(key, plaintext);
+
+    auto start = startTimer();
+    for (auto i = 0; i < numIters; i++) {
+        Bytes msg = Encryption::Decrypt(key, ctx);
+    }
+    endTimer("Encryption::Decrypt", start, numIters);
+}
+
 int main(int argc, char* argv[])
 {
     // OPRF
@@ -85,6 +108,10 @@ int main(int argc, char* argv[])
     // Secret Sharing
     BenchSecretSharingSplit();
     BenchSecretSharingCombine();
+
+    // Ciphering
+    BenchEncryption();
+    BenchDecryption();
 
     return 0;
 }

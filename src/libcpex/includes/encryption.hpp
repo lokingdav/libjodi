@@ -7,8 +7,9 @@ namespace libcpex {
     class Encryption {
         public:
             Encryption();
-            vector<uint8_t>encrypt(vector<uint8_t>msg, vector<uint8_t>callId);
-            vector<uint8_t>decrypt(vector<uint8_t>ctx, vector<uint8_t>callId, vector<uint8_t>key);
+            static Bytes Keygen();
+            static Bytes Encrypt(const Bytes &key, const Bytes &plaintext);
+            static Bytes Decrypt(const Bytes &key, const Bytes &ciphertext);
     };
 }
 
