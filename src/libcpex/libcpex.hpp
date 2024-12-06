@@ -5,7 +5,7 @@
 #include "includes/http.hpp"
 #include "includes/oprf.hpp"
 #include "includes/utils.hpp"
-#include "includes/cpexdht.hpp"
+#include "includes/dht.hpp"
 #include "includes/groupsig.hpp"
 #include "includes/ciphering.hpp"
 #include "includes/secret_sharing.hpp"
