@@ -76,26 +76,26 @@ void BenchSecretSharingCombine() {
 }
 
 void BenchEncryption() {
-    Bytes key = Encryption::Keygen();
+    Bytes key = Ciphering::Keygen();
     Bytes plaintext = Utils::RandomBytes(256); // 2KB
 
     auto start = startTimer();
     for (auto i = 0; i < numIters; i++) {
-        Bytes ctx = Encryption::Encrypt(key, plaintext);
+        Bytes ctx = Ciphering::Encrypt(key, plaintext);
     }
-    endTimer("Encryption::Encrypt", start, numIters);
+    endTimer("Ciphering::Encrypt", start, numIters);
 }
 
 void BenchDecryption() {
-    Bytes key = Encryption::Keygen();
+    Bytes key = Ciphering::Keygen();
     Bytes plaintext = Utils::RandomBytes(256); // 2KB
-    Bytes ctx = Encryption::Encrypt(key, plaintext);
+    Bytes ctx = Ciphering::Encrypt(key, plaintext);
 
     auto start = startTimer();
     for (auto i = 0; i < numIters; i++) {
-        Bytes msg = Encryption::Decrypt(key, ctx);
+        Bytes msg = Ciphering::Decrypt(key, ctx);
     }
-    endTimer("Encryption::Decrypt", start, numIters);
+    endTimer("Ciphering::Decrypt", start, numIters);
 }
 
 int main(int argc, char* argv[])

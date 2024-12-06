@@ -7,7 +7,7 @@
 #include "includes/utils.hpp"
 #include "includes/cpexdht.hpp"
 #include "includes/groupsig.hpp"
-#include "includes/encryption.hpp"
+#include "includes/ciphering.hpp"
 #include "includes/secret_sharing.hpp"
 
 namespace libcpex {
