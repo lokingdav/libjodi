@@ -77,4 +77,11 @@ namespace libcpex {
         }
         return data;
     }
+
+    Bytes Utils::RandomBytes(size_t size)
+    {
+        unsigned char buff[size];
+        randombytes_buf(buff, sizeof buff);
+        return Bytes(buff, buff + sizeof buff);
+    }
 }

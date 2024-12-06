@@ -18,6 +18,8 @@ namespace libcpex {
 
             static Bytes Xor(Bytes const & x, Bytes const & y);
             static Bytes RemoveTrailingZeroes(Bytes & data);
+
+            static Bytes RandomBytes(size_t size);
     };
 }
 
