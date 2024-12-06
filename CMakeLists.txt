@@ -12,6 +12,19 @@ project(libcpex VERSION ${libcpex_VERSION} LANGUAGES C CXX)
 
 include(FetchContent)
 
+# Run scripts to download some libraries
+execute_process(
+    COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/dllibs.sh
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    RESULT_VARIABLE dllibs_result
+    OUTPUT_VARIABLE dllibs_output
+    ERROR_VARIABLE dllibs_error
+)
+
+if(NOT dllibs_result EQUAL 0)
+    message(FATAL_ERROR "Your script failed with error code ${dllibs_result}\n${dllibs_error}")
+endif()
+
 set(BUILD_LIBCPEX_TESTS ON CACHE BOOL "Build CPeX Tests" FORCE)
 set(BUILD_LIBCPEX_BENCHMARKS ON CACHE BOOL "Build CPeX Benchmarks" FORCE)
 set(BUILD_LIBCPEX_PYTHON_BINDINGS OFF CACHE BOOL "Disable building CPeX Python bindings" FORCE)
