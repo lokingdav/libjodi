@@ -79,4 +79,68 @@ namespace libcpex {
 
         return Bytes(out, out + sizeof out);
     }
+
+    void KeyRotation::StartRotation(size_t size, size_t interval) {
+        if (rotationRunning) return;
+
+        expiryIndex = -1;
+        recentlyExpiredIndex = -1;
+        keyList.clear();
+
+        for (size_t i = 0; i < size; ++i) {
+            keyList.push_back(OPRF::Keygen());
+        }
+
+        rotationRunning = true;
+        stopRotation = false;
+
+        std::thread([this, interval]() {
+            while (!stopRotation) {
+                std::this_thread::sleep_for(std::chrono::seconds(interval));
+
+                if (stopRotation) break;
+                
+                //set current expiry index
+                expiryIndex = (expiryIndex + 1) % keyList.size();
+                // let current exppiryIndex be the recently expired
+                recentlyExpiredIndex = recentlyExpiredIndex;
+                // let's keep the recently expired key
+                recentlyExpiredKey = keyList[expiryIndex];
+                // let's replace the expired key
+                keyList[expiryIndex] = OPRF::Keygen();
+                // Remember the time recentlyExpiredIndex was replaced
+                recentlyExpiredTime = std::chrono::system_clock::now();
+            }
+
+            rotationRunning = false;
+        }).detach();
+    }
+
+    void KeyRotation::StopRotation() {
+        if (!rotationRunning) return;
+
+        stopRotation = true; // Signal the thread to stop
+
+        // Wait briefly to ensure the thread finishes (optional, based on your use case)
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        // Cleanup state
+        expiryIndex = -1;
+        keyList.clear();
+    }
+
+    bool KeyRotation::IsExpiredWithin(size_t index, size_t tmax) {
+        if (index < 0 || index >= keyList.size()) {
+            panic("index must be between 0 and size of keylist");
+        }
+
+        if (index != recentlyExpiredIndex) return false;
+
+        auto currentTime = std::chrono::system_clock::now();
+        auto thresholdTime = currentTime - std::chrono::seconds(tmax);
+
+        return recentlyExpiredTime >= thresholdTime;
+    }
+
+    KeyRotation::~KeyRotation() { StopRotation(); }
 }
