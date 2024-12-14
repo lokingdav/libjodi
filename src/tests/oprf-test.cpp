@@ -39,4 +39,37 @@ SCENARIO("OPRF protocol label generation", "[oprf]") {
             }
         }
     }
+
+    GIVEN("A KeyRotation instance, tmax in seconds, an interval in seconds, and a key set size") {
+        auto tmax = 1; //seconds
+        auto size = 10;
+        auto interval = tmax * 2; //seconds
+        auto instance = KeyRotation::getInstance();
+        
+        WHEN("a new instance is created") {
+            THEN("it should be a singleton") {
+                auto instance2 = KeyRotation::getInstance();
+                REQUIRE(instance == instance2);
+            }
+        }
+
+        WHEN("rotation is started") {
+            instance->StartRotation(size, interval);
+
+            THEN("it should have been initialized") {
+                REQUIRE(instance->GetListSize() == size);
+                REQUIRE(instance->GetExpiryIndex() == -1);
+                // make sure key index 0 is not expired
+                REQUIRE(instance->IsExpiredWithin(0, tmax) == false);
+            }
+        }
+
+        WHEN("rotation is running") {
+            THEN("it should stop when requested") {
+                instance->StopRotation();
+                REQUIRE(instance->GetListSize() == 0);
+                REQUIRE(instance->GetExpiryIndex() == -1);
+            }
+        }
+    }
 }

@@ -80,14 +80,14 @@ namespace libcpex {
         return Bytes(out, out + sizeof out);
     }
 
-    void KeyRotation::StartRotation(size_t size, size_t interval) {
+    void KeyRotation::StartRotation(int size, int interval) {
         if (rotationRunning) return;
 
         expiryIndex = -1;
         recentlyExpiredIndex = -1;
         keyList.clear();
 
-        for (size_t i = 0; i < size; ++i) {
+        for (auto i = 0; i < size; ++i) {
             keyList.push_back(OPRF::Keygen());
         }
 
@@ -99,13 +99,14 @@ namespace libcpex {
                 std::this_thread::sleep_for(std::chrono::seconds(interval));
 
                 if (stopRotation) break;
-                
+
+                std::lock_guard<std::mutex> lock(sharedMutex);
                 //set current expiry index
                 expiryIndex = (expiryIndex + 1) % keyList.size();
                 // let current exppiryIndex be the recently expired
-                recentlyExpiredIndex = recentlyExpiredIndex;
+                recentlyExpiredIndex = expiryIndex;
                 // let's keep the recently expired key
-                recentlyExpiredKey = keyList[expiryIndex];
+                recentlyExpiredKey = keyList[recentlyExpiredIndex];
                 // let's replace the expired key
                 keyList[expiryIndex] = OPRF::Keygen();
                 // Remember the time recentlyExpiredIndex was replaced
@@ -129,8 +130,10 @@ namespace libcpex {
         keyList.clear();
     }
 
-    bool KeyRotation::IsExpiredWithin(size_t index, size_t tmax) {
-        if (index < 0 || index >= keyList.size()) {
+    bool KeyRotation::IsExpiredWithin(int index, int tmax) {
+        if (index < 0) return false;
+        
+        if (index >= keyList.size()) {
             panic("index must be between 0 and size of keylist");
         }
 
@@ -143,4 +146,11 @@ namespace libcpex {
     }
 
     KeyRotation::~KeyRotation() { StopRotation(); }
+
+    OPRF_Keypair KeyRotation::GetKey(int index) { 
+        if (index < 0 || index >= keyList.size()) {
+            panic("index must be between 0 and size of keylist");
+        }
+        return keyList[index];
+    }
 }

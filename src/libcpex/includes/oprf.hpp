@@ -4,6 +4,7 @@
 #include <memory>
 #include <random>
 #include <chrono>
+#include <mutex>
 
 #include "base.hpp"
 
@@ -56,19 +57,27 @@ namespace libcpex {
                 return s;
             }
 
-            bool IsExpiredWithin(size_t index, size_t tmax);
-            void StartRotation(size_t size, size_t interval);
+            bool IsExpiredWithin(int index, int tmax);
+            void StartRotation(int size, int interval);
             void StopRotation();
+
+            int GetExpiryIndex() { return expiryIndex; }
+            int GetRecentlyExpiredIndex() { return recentlyExpiredIndex; }
+            OPRF_Keypair GetRecentlyExpiredKey() { return recentlyExpiredKey; }
+
+            OPRF_Keypair GetKey(int index);
+            int GetListSize() { return keyList.size(); }
         private:
-            size_t expiryIndex = -1;
+            int expiryIndex = -1;
             bool rotationRunning = false;
             bool stopRotation = false;
 
-            size_t recentlyExpiredIndex = -1;
+            int recentlyExpiredIndex = -1;
             OPRF_Keypair recentlyExpiredKey;
             std::chrono::time_point<std::chrono::system_clock> recentlyExpiredTime;
 
             vector<OPRF_Keypair> keyList;
+            std::mutex sharedMutex;
 
             // Disable constructor to force singleton
             KeyRotation() {};
