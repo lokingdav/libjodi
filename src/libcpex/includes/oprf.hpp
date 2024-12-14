@@ -52,7 +52,7 @@ namespace libcpex {
             KeyRotation(KeyRotation const&) = delete;
             KeyRotation& operator=(KeyRotation const&) = delete;
 
-            static std::shared_ptr<KeyRotation> getInstance() {
+            static std::shared_ptr<KeyRotation> GetInstance() {
                 static std::shared_ptr<KeyRotation> s{new KeyRotation};
                 return s;
             }

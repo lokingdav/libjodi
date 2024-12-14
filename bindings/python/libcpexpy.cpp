@@ -80,6 +80,27 @@ PYBIND11_MODULE(libcpexpy, module)
             return OPRF::Unblind(eval, seck);
         });
 
+    py::class_<KeyRotation>(module, "KeyRotation")
+        .def(py::init([]() {
+            return KeyRotation::GetInstance(); 
+        }))
+        .def("start_rotation", &KeyRotation::StartRotation)
+        .def("stop_rotation", &KeyRotation::StopRotation)
+        .def("is_expired_within", &KeyRotation::IsExpiredWithin)
+        .def("get_size", &KeyRotation::GetListSize)
+        .def("get_recently_expired_key", [](const py::size_t& index) {
+            py::gil_scoped_release release;
+            OPRF_Keypair kp = KeyRotation::GetInstance()->GetRecentlyExpiredKey();
+            return py::make_tuple(kp.sk, kp.pk);
+        })
+        .def("get_key", [](const py::size_t& index) {
+            py::gil_scoped_release release;
+            OPRF_Keypair kp = KeyRotation::GetInstance()->GetKey(index);
+            return py::make_tuple(kp.sk, kp.pk);
+        })
+        .def_static("singleton", &KeyRotation::GetInstance)
+        .def_static("get_instance", &KeyRotation::GetInstance);
+
     py::class_<SecretSharing>(module, "SecretSharing")
         .def_static("split", [](const py::bytes& secret, py::size_t n, py::size_t t) {
             py::gil_scoped_release release;

@@ -44,11 +44,11 @@ SCENARIO("OPRF protocol label generation", "[oprf]") {
         auto tmax = 1; //seconds
         auto size = 10;
         auto interval = tmax * 2; //seconds
-        auto instance = KeyRotation::getInstance();
+        auto instance = KeyRotation::GetInstance();
         
         WHEN("a new instance is created") {
             THEN("it should be a singleton") {
-                auto instance2 = KeyRotation::getInstance();
+                auto instance2 = KeyRotation::GetInstance();
                 REQUIRE(instance == instance2);
             }
         }
