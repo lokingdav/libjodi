@@ -3,12 +3,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 99)
 
-set(libcpex_VERSION_MAJOR 1)
-set(libcpex_VERSION_MINOR 0)
-set(libcpex_VERSION_PATCH 0)
-set(libcpex_VERSION ${libcpex_VERSION_MAJOR}.${libcpex_VERSION_MINOR}.${libcpex_VERSION_PATCH})
+project(libcpex VERSION 1.0.0 LANGUAGES C CXX)
 
-project(libcpex VERSION ${libcpex_VERSION} LANGUAGES C CXX)
+message(STATUS "libcpex Version: ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 include(FetchContent)
 
@@ -27,7 +24,7 @@ endif()
 
 set(BUILD_LIBCPEX_TESTS ON CACHE BOOL "Build CPeX Tests" FORCE)
 set(BUILD_LIBCPEX_BENCHMARKS ON CACHE BOOL "Build CPeX Benchmarks" FORCE)
-set(BUILD_LIBCPEX_PYTHON_BINDINGS OFF CACHE BOOL "Disable building CPeX Python bindings" FORCE)
+set(BUILD_LIBCPEX_PYTHON_BINDINGS ON CACHE BOOL "Disable building CPeX Python bindings" FORCE)
 
 message(STATUS "BUILD_LIBCPEX_TESTS: ${BUILD_LIBCPEX_TESTS}")
 message(STATUS "BUILD_LIBCPEX_BENCHMARKS: ${BUILD_LIBCPEX_BENCHMARKS}")
@@ -81,8 +78,6 @@ if(BUILD_LIBCPEX_TESTS)
 
   file(GLOB TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/*.cpp)
   source_group("TestSrcFiles" FILES ${TEST_SRC})
-  
-  message(STATUS "TEST_SRC: ${TEST_SRC}")
 
   add_executable(cpextest ${TEST_SRC})
   target_include_directories(cpextest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/tests)
