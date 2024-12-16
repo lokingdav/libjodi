@@ -10,19 +10,6 @@ message(STATUS "libcpex Version: ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINO
 
 include(FetchContent)
 
-# Run scripts to download some libraries
-execute_process(
-    COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/dllibs.sh
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    RESULT_VARIABLE dllibs_result
-    OUTPUT_VARIABLE dllibs_output
-    ERROR_VARIABLE dllibs_error
-)
-
-if(NOT dllibs_result EQUAL 0)
-    message(FATAL_ERROR "Your script failed with error code ${dllibs_result}\n${dllibs_error}")
-endif()
-
 set(BUILD_LIBCPEX_TESTS ON CACHE BOOL "Build CPeX Tests" FORCE)
 set(BUILD_LIBCPEX_BENCHMARKS ON CACHE BOOL "Build CPeX Benchmarks" FORCE)
 set(BUILD_LIBCPEX_PYTHON_BINDINGS ON CACHE BOOL "Disable building CPeX Python bindings" FORCE)
@@ -36,16 +23,6 @@ source_group("CPeXSrcHeaders" FILES ${LIB_HEADERS})
 
 file(GLOB LIB_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/libcpex/*.cpp)
 source_group("CPeXSrcFiles" FILES ${LIB_SRC_FILES})
-
-add_library(sss STATIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/libs/sss/sss.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/libs/sss/randombytes.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/libs/sss/hazmat.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/libs/sss/tweetnacl.c
-)
-target_include_directories(sss PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/libs/sss)
-target_link_libraries(sss PUBLIC sodium)  # sss depends on libsodium
-target_compile_definitions(sss PRIVATE HAVE_LIBSODIUM=1)
 
 
 set(libcpex_sources
@@ -70,7 +47,6 @@ FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download
 FetchContent_MakeAvailable(json)
 
 target_compile_definitions(libcpex PRIVATE __BLST_PORTABLE__ BLSALLOC_SODIUM=1)
-target_link_libraries(libcpex PRIVATE sss)
 target_link_libraries(libcpex PUBLIC sodium curl nlohmann_json::nlohmann_json)
 
 if(BUILD_LIBCPEX_BENCHMARKS)

@@ -112,21 +112,6 @@ PYBIND11_MODULE(pylibcpex, module)
             return KeyRotation::GetInstance();
         });
 
-    py::class_<SecretSharing>(module, "SecretSharing")
-        .def_static("split", [](const py::bytes& secret, py::size_t n, py::size_t t) {
-            py::gil_scoped_release release;
-            return SecretSharing::Split(PyBytesToBytes(secret), n, t);
-        })
-        .def_static("combine", [](const vector<py::bytes>& shares, py::size_t t) {
-            py::gil_scoped_release release;
-            vector<Bytes> _shares;
-            for (const auto& item : shares) {
-                _shares.push_back(std::move(PyBytesToBytes(item)));
-            }
-            return SecretSharing::Combine(_shares, t);
-        });
-   
-
     #ifdef LIBCPEX_VERSION
         module.attr("__version__") = LIBCPEX_VERSION;
     #else

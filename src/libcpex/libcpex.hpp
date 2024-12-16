@@ -8,7 +8,6 @@
 #include "includes/dht.hpp"
 #include "includes/groupsig.hpp"
 #include "includes/ciphering.hpp"
-#include "includes/secret_sharing.hpp"
 
 namespace libcpex {
     void panic(string error);

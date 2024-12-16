@@ -53,28 +53,6 @@ void BenchUnblinding() {
     endTimer("OPRF::Unblind", start, numIters);
 }
 
-void BenchSecretSharingSplit() {
-    auto n = 3, t = 2;
-    Bytes secret = Utils::RandomBytes(32);
-    auto start = startTimer();
-    for (auto i = 0; i < numIters; i++) {
-        vector<Bytes> shares = SecretSharing::Split(secret, n, t);
-    }
-    endTimer("SecretSharing::Split", start, numIters);
-}
-
-void BenchSecretSharingCombine() {
-    auto n = 3, t = 2;
-    Bytes secret = Utils::RandomBytes(32);
-    vector<Bytes> shares = SecretSharing::Split(secret, n, t);
-
-    auto start = startTimer();
-    for (auto i = 0; i < numIters; i++) {
-        Bytes reconsecret = SecretSharing::Combine(shares, t);
-    }
-    endTimer("SecretSharing::Combine", start, numIters);
-}
-
 void BenchEncryption() {
     Bytes key = Ciphering::Keygen();
     Bytes plaintext = Utils::RandomBytes(256); // 2KB
@@ -104,10 +82,6 @@ int main(int argc, char* argv[])
     BenchBlinding();
     BenchEvaluation();
     BenchUnblinding();
-
-    // Secret Sharing
-    BenchSecretSharingSplit();
-    BenchSecretSharingCombine();
 
     // Ciphering
     BenchEncryption();
