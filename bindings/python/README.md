@@ -5,12 +5,19 @@ Python bindings for the libcpex library.
 
 Requires Python 3.8+
 
-**Installing libcpexpy and Dependencies**
+**Installing pylibcpex and Dependencies**
 
 Installation instructions...
+
+```bash
+cd /path/to/libcpex
+pip install build
+python -m build
+pip install dist/*.whl
+```
 
 **Basic Usage**
 ```python
 
-import libcpexpy
+import pylibcpex
 ```

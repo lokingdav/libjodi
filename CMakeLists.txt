@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 99)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 project(libcpex VERSION 1.0.0 LANGUAGES C CXX)
 
@@ -57,9 +58,18 @@ target_include_directories(libcpex PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src/libcpex
 )
 
+FetchContent_Declare(sodium
+  GIT_REPOSITORY https://github.com/AmineKhaldi/libsodium-cmake.git
+  # Latest commit at the moment this was added here
+  # Anchored to libsodium v1.0.18
+  GIT_TAG f73a3fe1afdc4e37ac5fe0ddd401bf521f6bba65
+)
+FetchContent_MakeAvailable(sodium)
+
 FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
 FetchContent_MakeAvailable(json)
 
+target_compile_definitions(libcpex PRIVATE __BLST_PORTABLE__ BLSALLOC_SODIUM=1)
 target_link_libraries(libcpex PRIVATE sss)
 target_link_libraries(libcpex PUBLIC sodium curl nlohmann_json::nlohmann_json)
 
@@ -90,3 +100,6 @@ endif()
 if(BUILD_LIBCPEX_PYTHON_BINDINGS)
   add_subdirectory(bindings/python)
 endif()
+
+target_compile_options(libcpex PRIVATE -fPIC)
+

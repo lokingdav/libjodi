@@ -34,3 +34,5 @@
 build/
 .vscode/
 src/libs/
+dist/
+pylibcpex.egg-info/
