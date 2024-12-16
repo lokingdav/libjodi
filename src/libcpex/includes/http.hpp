@@ -2,32 +2,36 @@
 #define HTTP_HPP
 
 #include "base.hpp"
-#include <thread>
-#include <curl/curl.h>
-
-using std::thread;
+#include <map>
+#include <string>
+#include <vector>
 
 namespace libcpex {
     struct Request {
-        string url;
-        string payload;
-        map<string, string> headers;
+        std::string endpoint;
+        std::map<std::string, std::string> body;
+        std::map<std::string, std::string> headers;
+    };
+
+    struct Response {
+        bool success;
+        int statusCode;
+        std::string errorMessage;
+        std::map<std::string, std::string> payload;
+        std::map<std::string, std::string> headers;
     };
 
     class Http {
-        public:
-            Http();
-            ~Http();
+    public:
+        static std::vector<Response> gets(const std::vector<Request>& requests);
+        static std::vector<Response> posts(const std::vector<Request>& requests);
 
-            vector<string> get(const vector<Request>& requests);
-            vector<string> post(const vector<Request>& requests);
+        static Response get(const Request& req);
+        static Response post(const Request& req);
 
-        private:
-            void performGetRequest(const Request& req, string& response);
-            void performPostRequest(const Request& req, string& response);
-
-            static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp);
-        };
+    private:
+        static Response performHttpRequest(const Request& req, bool isPost);
+    };
 }
 
 #endif // HTTP_HPP
