@@ -84,10 +84,22 @@ PYBIND11_MODULE(libcpexpy, module)
         .def(py::init([]() {
             return KeyRotation::GetInstance(); 
         }))
-        .def("start_rotation", &KeyRotation::StartRotation)
-        .def("stop_rotation", &KeyRotation::StopRotation)
-        .def("is_expired_within", &KeyRotation::IsExpiredWithin)
-        .def("get_size", &KeyRotation::GetListSize)
+        .def("start_rotation", [](const py::size_t& size, const py::size_t& interval) {
+            py::gil_scoped_release release;
+            KeyRotation::GetInstance()->StartRotation(size, interval);
+        })
+        .def("stop_rotation", []() {
+            py::gil_scoped_release release;
+            KeyRotation::GetInstance()->StopRotation();
+        })
+        .def("is_expired_within", [](const py::size_t& index, const py::size_t& tmax) {
+            py::gil_scoped_release release;
+            return KeyRotation::GetInstance()->IsExpiredWithin(index, tmax);
+        })
+        .def("get_list_size", []() {
+            py::gil_scoped_release release;
+            return KeyRotation::GetInstance()->GetListSize();
+        })
         .def("get_recently_expired_key", [](const py::size_t& index) {
             py::gil_scoped_release release;
             OPRF_Keypair kp = KeyRotation::GetInstance()->GetRecentlyExpiredKey();
@@ -98,8 +110,10 @@ PYBIND11_MODULE(libcpexpy, module)
             OPRF_Keypair kp = KeyRotation::GetInstance()->GetKey(index);
             return py::make_tuple(kp.sk, kp.pk);
         })
-        .def_static("singleton", &KeyRotation::GetInstance)
-        .def_static("get_instance", &KeyRotation::GetInstance);
+        .def_static("get_instance", []() {
+            py::gil_scoped_release;
+            return KeyRotation::GetInstance();
+        });
 
     py::class_<SecretSharing>(module, "SecretSharing")
         .def_static("split", [](const py::bytes& secret, py::size_t n, py::size_t t) {

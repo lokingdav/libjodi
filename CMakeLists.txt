@@ -65,7 +65,7 @@ if(BUILD_LIBCPEX_BENCHMARKS)
   source_group("BenchSrcFiles" FILES ${BENCH_SRC})
   add_executable(cpexbench ${BENCH_SRC})
   target_include_directories(cpexbench PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/bench)  
-  target_link_libraries(cpexbench PRIVATE libcpex sodium)
+  target_link_libraries(cpexbench PRIVATE libcpex)
 endif()
 
 if(BUILD_LIBCPEX_TESTS)
@@ -81,7 +81,7 @@ if(BUILD_LIBCPEX_TESTS)
 
   add_executable(cpextest ${TEST_SRC})
   target_include_directories(cpextest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/tests)
-  target_link_libraries(cpextest PRIVATE libcpex Catch2::Catch2WithMain sodium)
+  target_link_libraries(cpextest PRIVATE libcpex Catch2::Catch2WithMain)
 endif()
 
 if(BUILD_LIBCPEX_PYTHON_BINDINGS)
