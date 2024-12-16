@@ -5,6 +5,9 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <nlohmann/json.hpp>
+
+using namespace nlohmann;
 
 namespace libcpex {
     struct Request {
@@ -17,8 +20,8 @@ namespace libcpex {
         bool success;
         int statusCode;
         std::string errorMessage;
-        std::map<std::string, std::string> payload;
         std::map<std::string, std::string> headers;
+        json payload;
     };
 
     class Http {

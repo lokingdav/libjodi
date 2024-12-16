@@ -42,8 +42,8 @@ namespace libcpex {
                 // This is where an actual request would happen
                 // Simulate fetched nodes
                 vector<CpexNode> fetchedNodes;
-                CpexNode nodeA{"nodeIdA", "192.168.1.10", "http://192.168.1.10:8000", true};
-                CpexNode nodeB{"nodeIdB", "192.168.1.11", "http://192.168.1.11:8000", true};
+                CpexNode nodeA{"nodeIdA", "192.168.1.10", true};
+                CpexNode nodeB{"nodeIdB", "192.168.1.11", true};
                 fetchedNodes.push_back(nodeA);
                 fetchedNodes.push_back(nodeB);
 

@@ -57,8 +57,11 @@ target_include_directories(libcpex PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src/libcpex
 )
 
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
+FetchContent_MakeAvailable(json)
+
 target_link_libraries(libcpex PRIVATE sss)
-target_link_libraries(libcpex PUBLIC sodium)
+target_link_libraries(libcpex PUBLIC sodium curl nlohmann_json::nlohmann_json)
 
 if(BUILD_LIBCPEX_BENCHMARKS)
   file(GLOB BENCH_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/bench/*.cpp)

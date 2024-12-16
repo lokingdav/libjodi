@@ -9,9 +9,7 @@
 
 #include "./includes/http.hpp"
 
-using namespace libcpex;
-
-namespace {
+namespace libcpex {
     static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
         std::string* str = (std::string*) userp;
         size_t totalSize = size * nmemb;
@@ -76,143 +74,125 @@ namespace {
         return postFields;
     }
     
-    static std::map<std::string, std::string> parsePayload(const std::string& body) {
-        std::map<std::string, std::string> payload;
+    static json parsePayload(const std::string& body) {
+        json payload;
 
-        if (body.find('=') != std::string::npos) {
-            std::istringstream ss(body);
-            std::string kv;
-            while (std::getline(ss, kv, '&')) {
-                auto eqPos = kv.find('=');
-                if (eqPos != std::string::npos) {
-                    std::string key = kv.substr(0, eqPos);
-                    std::string val = kv.substr(eqPos + 1);
-                    payload[key] = val;
-                } else {
-                    // Not properly formatted, fallback
-                    payload.clear();
-                    payload["raw_body"] = body;
-                    return payload;
-                }
-            }
-            // If we got here, we managed to parse some pairs
-            if (payload.empty()) {
-                payload["raw_body"] = body;
-            }
-        } else {
-            // Just store raw
+        try {
+            payload = json::parse(body);
+        } catch (const std::exception& e) {
+            payload["error"] = std::string("JSON parse error: ") + e.what();
             payload["raw_body"] = body;
         }
 
         return payload;
     }
 
-}
+    std::vector<Response> Http::gets(const std::vector<Request>& requests) {
+        std::vector<std::future<Response>> futures;
+        futures.reserve(requests.size());
 
-std::vector<Response> Http::gets(const std::vector<Request>& requests) {
-    std::vector<std::future<Response>> futures;
-    futures.reserve(requests.size());
+        // Launch each get request asynchronously.
+        for (const auto& req : requests) {
+            futures.emplace_back(std::async(std::launch::async, [&req]() {
+                return get(req);
+            }));
+        }
 
-    // Launch each get request asynchronously.
-    for (const auto& req : requests) {
-        futures.emplace_back(std::async(std::launch::async, [&req]() {
-            return get(req);
-        }));
+        // Collect the results
+        std::vector<Response> results;
+        results.reserve(futures.size());
+        for (auto& f : futures) {
+            results.push_back(f.get());
+        }
+
+        return results;
     }
 
-    // Collect the results
-    std::vector<Response> results;
-    results.reserve(futures.size());
-    for (auto& f : futures) {
-        results.push_back(f.get());
+    std::vector<Response> Http::posts(const std::vector<Request>& requests) {
+        std::vector<std::future<Response>> futures;
+        futures.reserve(requests.size());
+
+        // Launch each post request asynchronously.
+        for (const auto& req : requests) {
+            futures.emplace_back(std::async(std::launch::async, [&req]() {
+                return post(req);
+            }));
+        }
+
+        // Collect the results
+        std::vector<Response> results;
+        results.reserve(futures.size());
+        for (auto& f : futures) {
+            results.push_back(f.get());
+        }
+
+        return results;
     }
 
-    return results;
-}
-
-std::vector<Response> Http::posts(const std::vector<Request>& requests) {
-    std::vector<std::future<Response>> futures;
-    futures.reserve(requests.size());
-
-    // Launch each post request asynchronously.
-    for (const auto& req : requests) {
-        futures.emplace_back(std::async(std::launch::async, [&req]() {
-            return post(req);
-        }));
+    Response Http::get(const Request& req) {
+        return performHttpRequest(req, false);
     }
 
-    // Collect the results
-    std::vector<Response> results;
-    results.reserve(futures.size());
-    for (auto& f : futures) {
-        results.push_back(f.get());
+    Response Http::post(const Request& req) {
+        return performHttpRequest(req, true);
     }
 
-    return results;
-}
+    Response Http::performHttpRequest(const Request& req, bool isPost) {
+        Response resp;
+        resp.success = false;
+        resp.statusCode = 0;
+        resp.errorMessage.clear();
+        resp.payload.clear();
+        resp.headers.clear();
 
-Response Http::get(const Request& req) {
-    return performHttpRequest(req, false);
-}
+        CURL* curl = curl_easy_init();
+        if (!curl) {
+            resp.errorMessage = "Failed to initialize CURL";
+            return resp;
+        }
 
-Response Http::post(const Request& req) {
-    return performHttpRequest(req, true);
-}
+        std::string responseBody;
+        curl_easy_setopt(curl, CURLOPT_URL, req.endpoint.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseBody);
+        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, HeaderCallback);
+        curl_easy_setopt(curl, CURLOPT_HEADERDATA, &resp.headers);
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
-Response Http::performHttpRequest(const Request& req, bool isPost) {
-    Response resp;
-    resp.success = false;
-    resp.statusCode = 0;
-    resp.errorMessage.clear();
-    resp.payload.clear();
-    resp.headers.clear();
+        curl_slist *chunk = setRequestHeaders(curl, req.headers);
 
-    CURL* curl = curl_easy_init();
-    if (!curl) {
-        resp.errorMessage = "Failed to initialize CURL";
+        if (isPost) {
+            curl_easy_setopt(curl, CURLOPT_POST, 1L);
+            std::string postFields = buildPostFields(curl, req.body);
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields.c_str());
+        }
+
+        CURLcode res = curl_easy_perform(curl);
+        if (res != CURLE_OK) {
+            resp.errorMessage = curl_easy_strerror(res);
+        }
+
+        // Check HTTP status code
+        long httpCode = 0;
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
+        resp.statusCode = static_cast<int>(httpCode);
+
+        // Determine success based on HTTP status code and curl result
+        if (res == CURLE_OK && httpCode >= 200 && httpCode < 300) {
+            resp.success = true;
+        } else {
+            if (resp.errorMessage.empty() && (httpCode < 200 || httpCode >= 300)) {
+                resp.errorMessage = "HTTP request failed with status code: " + std::to_string(httpCode);
+            }
+        }
+
+        // Parse payload
+        resp.payload = parsePayload(responseBody);
+
+        if (chunk) curl_slist_free_all(chunk);
+        curl_easy_cleanup(curl);
+
         return resp;
     }
-
-    std::string responseBody;
-    curl_easy_setopt(curl, CURLOPT_URL, req.endpoint.c_str());
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseBody);
-    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, HeaderCallback);
-    curl_easy_setopt(curl, CURLOPT_HEADERDATA, &resp.headers);
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-
-    curl_slist *chunk = setRequestHeaders(curl, req.headers);
-
-    if (isPost) {
-        curl_easy_setopt(curl, CURLOPT_POST, 1L);
-        std::string postFields = buildPostFields(curl, req.body);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields.c_str());
-    }
-
-    CURLcode res = curl_easy_perform(curl);
-    if (res != CURLE_OK) {
-        resp.errorMessage = curl_easy_strerror(res);
-    }
-
-    // Check HTTP status code
-    long httpCode = 0;
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
-    resp.statusCode = static_cast<int>(httpCode);
-
-    // Determine success based on HTTP status code and curl result
-    if (res == CURLE_OK && httpCode >= 200 && httpCode < 300) {
-        resp.success = true;
-    } else {
-        if (resp.errorMessage.empty() && (httpCode < 200 || httpCode >= 300)) {
-            resp.errorMessage = "HTTP request failed with status code: " + std::to_string(httpCode);
-        }
-    }
-
-    // Parse payload
-    resp.payload = parsePayload(responseBody);
-
-    if (chunk) curl_slist_free_all(chunk);
-    curl_easy_cleanup(curl);
-
-    return resp;
 }
+

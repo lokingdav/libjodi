@@ -10,7 +10,6 @@
 namespace libcpex {
     struct CpexNode {
         std::string id;
-        std::string ipAddress;
         std::string baseUrl;
         bool isHealthy = false;
     };
