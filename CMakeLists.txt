@@ -10,9 +10,9 @@ message(STATUS "libcpex Version: ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINO
 
 include(FetchContent)
 
-set(BUILD_LIBCPEX_TESTS ON CACHE BOOL "Build CPeX Tests" FORCE)
-set(BUILD_LIBCPEX_BENCHMARKS ON CACHE BOOL "Build CPeX Benchmarks" FORCE)
-set(BUILD_LIBCPEX_PYTHON_BINDINGS ON CACHE BOOL "Disable building CPeX Python bindings" FORCE)
+set(BUILD_LIBCPEX_TESTS ON CACHE BOOL "Build CPeX Tests")
+set(BUILD_LIBCPEX_BENCHMARKS ON CACHE BOOL "Build CPeX Benchmarks")
+set(BUILD_LIBCPEX_PYTHON_BINDINGS ON CACHE BOOL "Disable building CPeX Python bindings")
 
 message(STATUS "BUILD_LIBCPEX_TESTS: ${BUILD_LIBCPEX_TESTS}")
 message(STATUS "BUILD_LIBCPEX_BENCHMARKS: ${BUILD_LIBCPEX_BENCHMARKS}")
@@ -35,19 +35,20 @@ target_include_directories(libcpex PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src/libcpex
 )
 
-FetchContent_Declare(sodium
-  GIT_REPOSITORY https://github.com/AmineKhaldi/libsodium-cmake.git
-  # Latest commit at the moment this was added here
-  # Anchored to libsodium v1.0.18
-  GIT_TAG f73a3fe1afdc4e37ac5fe0ddd401bf521f6bba65
+FetchContent_Declare(json
+    GIT_REPOSITORY https://github.com/nlohmann/json
+    GIT_TAG v3.11.3
 )
-FetchContent_MakeAvailable(sodium)
-
-FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
 FetchContent_MakeAvailable(json)
 
 target_compile_definitions(libcpex PRIVATE __BLST_PORTABLE__ BLSALLOC_SODIUM=1)
 target_link_libraries(libcpex PUBLIC sodium curl nlohmann_json::nlohmann_json)
+
+find_package(Threads REQUIRED)
+
+# If your main library target is libcpex:
+target_link_libraries(libcpex PRIVATE Threads::Threads)
+
 
 if(BUILD_LIBCPEX_BENCHMARKS)
   file(GLOB BENCH_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/bench/*.cpp)
@@ -70,7 +71,7 @@ if(BUILD_LIBCPEX_TESTS)
 
   add_executable(cpextest ${TEST_SRC})
   target_include_directories(cpextest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/tests)
-  target_link_libraries(cpextest PRIVATE libcpex Catch2::Catch2WithMain)
+  target_link_libraries(cpextest PRIVATE libcpex Catch2::Catch2WithMain Threads::Threads)
 endif()
 
 if(BUILD_LIBCPEX_PYTHON_BINDINGS)
