@@ -19,18 +19,18 @@ namespace libcpex {
 
     class OPRF_Blinded {
         public:
-            Bytes mask;
-            Bytes sk;
+            Bytes x;
+            Bytes r;
             OPRF_Blinded() {};
-            OPRF_Blinded(Bytes msk, Bytes rs): mask(msk), sk(rs) {};
+            OPRF_Blinded(Bytes x, Bytes r): r(r), x(x) {};
     };
 
     class OPRF_BlindedEval {
         public:
             Bytes fx;
-            Bytes pk;
+            Bytes vk;
             OPRF_BlindedEval() {};
-            OPRF_BlindedEval(Bytes fx, Bytes pk): fx(fx), pk(pk) {};
+            OPRF_BlindedEval(Bytes fx, Bytes vk): fx(fx), vk(vk) {};
     };
 
     class OPRF {
@@ -40,7 +40,7 @@ namespace libcpex {
             static OPRF_Blinded Blind(const string* msg);
             static OPRF_BlindedEval Evaluate(const OPRF_Keypair& keypair, const Bytes& x);
             static Bytes Unblind(OPRF_BlindedEval eval, OPRF_Blinded& blinding);
-            static Bytes Unblind(OPRF_BlindedEval eval, Bytes& sk);
+            static Bytes Unblind(OPRF_BlindedEval eval, Bytes& r);
         
         private:
             OPRF() {};

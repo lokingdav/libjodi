@@ -36,7 +36,7 @@ void BenchEvaluation() {
 
     auto start = startTimer();
     for (auto i = 0; i < numIters; i++) {
-        auto eval = OPRF::Evaluate(keypair, blinded.mask);
+        auto eval = OPRF::Evaluate(keypair, blinded.x);
     }
     endTimer("OPRF::Evaluate", start, numIters);
 }
@@ -44,11 +44,11 @@ void BenchEvaluation() {
 void BenchUnblinding() {
     auto keypair = OPRF::Keygen();
     auto blinded = OPRF::Blind(&callDetails);
-    auto eval = OPRF::Evaluate(keypair, blinded.mask);
+    auto eval = OPRF::Evaluate(keypair, blinded.x);
 
     auto start = startTimer();
     for (auto i = 0; i < numIters; i++) {
-        Bytes label = OPRF::Unblind(eval, blinded.sk);
+        Bytes label = OPRF::Unblind(eval, blinded.r);
     }
     endTimer("OPRF::Unblind", start, numIters);
 }

@@ -32,19 +32,21 @@ namespace libcpex {
         // Blind point by  p_msg * g^r where g^r is a random point
         unsigned char rand_scalar[crypto_core_ristretto255_SCALARBYTES];
         unsigned char rand_point[crypto_core_ristretto255_BYTES];
-        unsigned char mask[crypto_core_ristretto255_BYTES];
+        unsigned char x[crypto_core_ristretto255_BYTES];
         
         crypto_core_ristretto255_scalar_random(rand_scalar);
         crypto_scalarmult_ristretto255_base(rand_point, rand_scalar);
-        crypto_core_ristretto255_add(mask, p_msg, rand_point);
+        crypto_core_ristretto255_add(x, p_msg, rand_point);
 
         OPRF_Blinded out;
-        out.mask = Bytes(mask, mask + sizeof mask);
-        out.sk = Bytes(rand_scalar, rand_scalar + sizeof rand_scalar);
+        out.x = Bytes(x, x + sizeof x);
+        out.r = Bytes(rand_scalar, rand_scalar + sizeof rand_scalar);
         return out;
     }
 
     OPRF_BlindedEval OPRF::Evaluate(const OPRF_Keypair& keypair, const Bytes& x) {
+        OPRF::InitSodium();
+
         const unsigned char* skchar = keypair.sk.data();
         const unsigned char* xchar = x.data();
 
@@ -56,13 +58,15 @@ namespace libcpex {
 
         OPRF_BlindedEval out;
         out.fx = Bytes(fx, fx + sizeof fx);
-        out.pk = keypair.pk;
+        out.vk = keypair.pk;
         return out;
     }
 
     Bytes OPRF::Unblind(OPRF_BlindedEval eval, Bytes& sk) {
+        OPRF::InitSodium();
+        
         const unsigned char* skchar = sk.data();
-        const unsigned char* pkchar = eval.pk.data();
+        const unsigned char* pkchar = eval.vk.data();
         const unsigned char* fxchar = eval.fx.data();
 
         unsigned char neg_sk[crypto_core_ristretto255_SCALARBYTES];
