@@ -1,63 +1,131 @@
-cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+
+# -----------------------------
+# Project definition
+# -----------------------------
+project(
+  libcpex
+  VERSION 1.0.0
+  DESCRIPTION "LibCPeX library"
+  LANGUAGES C CXX
+)
+
+# -----------------------------
+# General settings
+# -----------------------------
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-project(libcpex VERSION 1.0.0 LANGUAGES C CXX)
+# (Optional) new policy for controlling option() default values
+if(POLICY CMP0077)
+  cmake_policy(SET CMP0077 NEW)
+endif()
 
-message(STATUS "libcpex Version: ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+message(STATUS "Building libcpex Version: ${PROJECT_VERSION}")
 
+# -----------------------------
+# Options
+# -----------------------------
+option(BUILD_LIBCPEX_TESTS           "Build CPeX Tests"              ON)
+option(BUILD_LIBCPEX_BENCHMARKS      "Build CPeX Benchmarks"         ON)
+option(BUILD_LIBCPEX_PYTHON_BINDINGS "Build CPeX Python bindings"    ON)
+option(ENABLE_SANITIZERS             "Enable ASan/UBSan"             OFF)
+
+message(STATUS "BUILD_LIBCPEX_TESTS:           ${BUILD_LIBCPEX_TESTS}")
+message(STATUS "BUILD_LIBCPEX_BENCHMARKS:      ${BUILD_LIBCPEX_BENCHMARKS}")
+message(STATUS "BUILD_LIBCPEX_PYTHON_BINDINGS: ${BUILD_LIBCPEX_PYTHON_BINDINGS}")
+message(STATUS "ENABLE_SANITIZERS:             ${ENABLE_SANITIZERS}")
+
+# -----------------------------
+# Optional: enable sanitizers
+# -----------------------------
+if(ENABLE_SANITIZERS)
+  message(STATUS "Enabling AddressSanitizer and UndefinedBehaviorSanitizer.")
+  set(SANITIZE_FLAGS "-fsanitize=address -fsanitize=undefined -g")
+
+  set(CMAKE_CXX_FLAGS             "${CMAKE_CXX_FLAGS} ${SANITIZE_FLAGS}")
+  set(CMAKE_C_FLAGS               "${CMAKE_C_FLAGS} ${SANITIZE_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS      "${CMAKE_EXE_LINKER_FLAGS} ${SANITIZE_FLAGS}")
+  set(CMAKE_SHARED_LINKER_FLAGS   "${CMAKE_SHARED_LINKER_FLAGS} ${SANITIZE_FLAGS}")
+endif()
+
+# -----------------------------
+# Dependencies
+# -----------------------------
 include(FetchContent)
 
-set(BUILD_LIBCPEX_TESTS ON CACHE BOOL "Build CPeX Tests")
-set(BUILD_LIBCPEX_BENCHMARKS ON CACHE BOOL "Build CPeX Benchmarks")
-set(BUILD_LIBCPEX_PYTHON_BINDINGS ON CACHE BOOL "Disable building CPeX Python bindings")
+# nlohmann/json (remove if you don't need JSON parsing)
+FetchContent_Declare(
+  json
+  GIT_REPOSITORY https://github.com/nlohmann/json
+  GIT_TAG v3.11.3
+)
+FetchContent_MakeAvailable(json)
 
-message(STATUS "BUILD_LIBCPEX_TESTS: ${BUILD_LIBCPEX_TESTS}")
-message(STATUS "BUILD_LIBCPEX_BENCHMARKS: ${BUILD_LIBCPEX_BENCHMARKS}")
-message(STATUS "BUILD_LIBCPEX_PYTHON_BINDINGS: ${BUILD_LIBCPEX_PYTHON_BINDINGS}")
+# libcurl (remove if you don't need it)
+find_package(CURL REQUIRED)
 
-file(GLOB LIB_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/libcpex/includes/*.hpp)
-source_group("CPeXSrcHeaders" FILES ${LIB_HEADERS})
+# libsodium (system library)
+find_library(SODIUM_LIBRARY NAMES sodium REQUIRED)
+if(NOT SODIUM_LIBRARY)
+  message(FATAL_ERROR "libsodium not found. Please install it (e.g. libsodium-dev).")
+endif()
 
-file(GLOB LIB_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/libcpex/*.cpp)
-source_group("CPeXSrcFiles" FILES ${LIB_SRC_FILES})
+# Threads
+find_package(Threads REQUIRED)
 
+# -----------------------------
+# Sources for main libcpex library
+# -----------------------------
+file(GLOB LIB_HEADERS
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/libcpex/includes/*.hpp"
+)
+file(GLOB LIB_SRC_FILES
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/libcpex/*.cpp"
+)
 
-set(libcpex_sources
+# -----------------------------
+# Define the libcpex library
+# -----------------------------
+add_library(libcpex STATIC
   ${LIB_HEADERS}
   ${LIB_SRC_FILES}
 )
 
-add_library(libcpex STATIC ${libcpex_sources})
+# Make sure we have -fPIC even for static libs
+target_compile_options(libcpex PRIVATE -fPIC)
+
+# Public headers so consumers can do target_link_libraries and see them
 target_include_directories(libcpex PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/libcpex
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/libcpex"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/libcpex/includes"
 )
 
-FetchContent_Declare(json
-    GIT_REPOSITORY https://github.com/nlohmann/json
-    GIT_TAG v3.11.3
+# Link with any needed deps
+target_link_libraries(libcpex
+  PUBLIC
+    nlohmann_json::nlohmann_json
+    CURL::libcurl
+    ${SODIUM_LIBRARY}
+  PRIVATE
+    Threads::Threads
 )
-FetchContent_MakeAvailable(json)
 
-target_compile_definitions(libcpex PRIVATE __BLST_PORTABLE__ BLSALLOC_SODIUM=1)
-target_link_libraries(libcpex PUBLIC sodium curl nlohmann_json::nlohmann_json)
-
-find_package(Threads REQUIRED)
-
-# If your main library target is libcpex:
-target_link_libraries(libcpex PRIVATE Threads::Threads)
-
-
+# -----------------------------
+# Benchmarks
+# -----------------------------
 if(BUILD_LIBCPEX_BENCHMARKS)
-  file(GLOB BENCH_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/bench/*.cpp)
-  source_group("BenchSrcFiles" FILES ${BENCH_SRC})
+  file(GLOB BENCH_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/bench/*.cpp")
   add_executable(cpexbench ${BENCH_SRC})
-  target_include_directories(cpexbench PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/bench)  
+  target_include_directories(cpexbench PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/bench")
   target_link_libraries(cpexbench PRIVATE libcpex)
 endif()
 
+# -----------------------------
+# Tests (using Catch2)
+# -----------------------------
 if(BUILD_LIBCPEX_TESTS)
   FetchContent_Declare(
     Catch2
@@ -66,17 +134,15 @@ if(BUILD_LIBCPEX_TESTS)
   )
   FetchContent_MakeAvailable(Catch2)
 
-  file(GLOB TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/*.cpp)
-  source_group("TestSrcFiles" FILES ${TEST_SRC})
-
+  file(GLOB TEST_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/tests/*.cpp")
   add_executable(cpextest ${TEST_SRC})
-  target_include_directories(cpextest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/tests)
-  target_link_libraries(cpextest PRIVATE libcpex Catch2::Catch2WithMain Threads::Threads)
+  target_include_directories(cpextest PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/tests")
+  target_link_libraries(cpextest PRIVATE libcpex Catch2::Catch2WithMain)
 endif()
 
+# -----------------------------
+# Python bindings
+# -----------------------------
 if(BUILD_LIBCPEX_PYTHON_BINDINGS)
   add_subdirectory(bindings/python)
 endif()
-
-target_compile_options(libcpex PRIVATE -fPIC)
-
