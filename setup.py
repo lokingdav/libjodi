@@ -36,7 +36,7 @@ class CMakeBuild(build_ext):
             "-DPYTHON_EXECUTABLE=" + sys.executable,
             "-DBUILD_LIBCPEX_TESTS=OFF",
             "-DBUILD_LIBCPEX_BENCHMARKS=OFF",
-            "-DENABLE_SANITIZERS=ON",
+            "-DENABLE_SANITIZERS=OFF",
         ]
 
         cfg = "Debug" if self.debug else "Release"
