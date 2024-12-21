@@ -1,90 +1,147 @@
 #include <sodium.h>
-#include "libcpex.hpp"
+#include <stdexcept>
+#include <mutex>
+#include <chrono>
+#include <condition_variable>
+#include <thread>
+#include "libcpex.hpp"  // Your existing .hpp with class definitions
 
-namespace libcpex {
-    void OPRF::InitSodium() {
+namespace libcpex
+{
+
+static void GlobalInitSodium()
+{
+    // Only call sodium_init() once per process
+    static bool initialized = false;
+    if (!initialized) {
         if (sodium_init() < 0) {
-            throw std::runtime_error("Sodium failed to init");
+            throw std::runtime_error("libsodium initialization failed");
         }
+        initialized = true;
+    }
+}
+
+//------------------------------------------------------------------------------
+// OPRF IMPLEMENTATIONS
+//------------------------------------------------------------------------------
+
+void OPRF::InitSodium()
+{
+    // Preserve your function name, but do the “only once” init inside
+    GlobalInitSodium();
+}
+
+OPRF_Keypair OPRF::Keygen()
+{
+    InitSodium();
+
+    // Generate random secret scalar sk
+    unsigned char sk[crypto_core_ristretto255_SCALARBYTES];
+    randombytes_buf(sk, sizeof(sk));
+
+    // pk = g^sk
+    unsigned char pk[crypto_core_ristretto255_BYTES];
+    crypto_scalarmult_ristretto255_base(pk, sk);
+
+    OPRF_Keypair keypair;
+    keypair.sk.assign(sk, sk + sizeof(sk));
+    keypair.pk.assign(pk, pk + sizeof(pk));
+    return keypair;
+}
+
+OPRF_Blinded OPRF::Blind(const std::string &msg)
+{
+    InitSodium();
+
+    // 1. Hash message -> 64 bytes
+    unsigned char hashbuf[64];
+    crypto_hash_sha512(
+        hashbuf,
+        reinterpret_cast<const unsigned char*>(msg.data()),
+        msg.size()
+    );
+
+    // 2. Convert that 64-byte hash to a Ristretto point
+    unsigned char p_msg[crypto_core_ristretto255_BYTES];
+    if (crypto_core_ristretto255_from_hash(p_msg, hashbuf) != 0) {
+        throw std::runtime_error("crypto_core_ristretto255_from_hash() failed");
     }
 
-    OPRF_Keypair OPRF::Keygen() {
-        OPRF::InitSodium();
+    // 3. rand_scalar -> rand_point -> x = p_msg + rand_point
+    unsigned char rand_scalar[crypto_core_ristretto255_SCALARBYTES];
+    unsigned char rand_point[crypto_core_ristretto255_BYTES];
+    unsigned char x[crypto_core_ristretto255_BYTES];
 
-        // generate random secret key
-        unsigned char sk[crypto_core_ristretto255_SCALARBYTES];
-        randombytes_buf(sk, sizeof sk);
+    crypto_core_ristretto255_scalar_random(rand_scalar);
+    crypto_scalarmult_ristretto255_base(rand_point, rand_scalar);
+    crypto_core_ristretto255_add(x, p_msg, rand_point);
 
-        // Compute public key: pk = g^{sk}
-        unsigned char pk[crypto_core_ristretto255_BYTES];
-        crypto_scalarmult_ristretto255_base(pk, sk);
+    OPRF_Blinded out;
+    out.x.assign(x, x + sizeof(x));
+    out.r.assign(rand_scalar, rand_scalar + sizeof(rand_scalar));
+    return out;
+}
 
-        return OPRF_Keypair(Bytes(sk, sk + sizeof sk), Bytes(pk, pk + sizeof pk));
+OPRF_BlindedEval OPRF::Evaluate(const OPRF_Keypair &keypair, const Bytes &x)
+{
+    InitSodium();
+
+    if (x.size() != crypto_core_ristretto255_BYTES) {
+        throw std::runtime_error("OPRF::Evaluate: invalid x size");
     }
 
-    OPRF_Blinded OPRF::Blind(const string* msg)
-    {   OPRF::InitSodium();
+    const unsigned char* skchar = keypair.sk.data();
+    const unsigned char* xchar  = x.data();
 
-        // Hash message to a point on the curve p_msg
-        unsigned char p_msg[crypto_core_ristretto255_BYTES];
-        crypto_core_ristretto255_from_hash(p_msg, reinterpret_cast<const unsigned char*>(msg->data()));
-
-        // Blind point by  p_msg * g^r where g^r is a random point
-        unsigned char rand_scalar[crypto_core_ristretto255_SCALARBYTES];
-        unsigned char rand_point[crypto_core_ristretto255_BYTES];
-        unsigned char x[crypto_core_ristretto255_BYTES];
-        
-        crypto_core_ristretto255_scalar_random(rand_scalar);
-        crypto_scalarmult_ristretto255_base(rand_point, rand_scalar);
-        crypto_core_ristretto255_add(x, p_msg, rand_point);
-
-        OPRF_Blinded out;
-        out.x = Bytes(x, x + sizeof x);
-        out.r = Bytes(rand_scalar, rand_scalar + sizeof rand_scalar);
-        return out;
+    unsigned char fx[crypto_core_ristretto255_BYTES];
+    if (crypto_scalarmult_ristretto255(fx, skchar, xchar) != 0) {
+        throw std::runtime_error("crypto_scalarmult_ristretto255() failed in Evaluate()");
     }
 
-    OPRF_BlindedEval OPRF::Evaluate(const OPRF_Keypair& keypair, const Bytes& x) {
-        OPRF::InitSodium();
+    OPRF_BlindedEval out;
+    out.fx.assign(fx, fx + sizeof(fx));
+    out.vk = keypair.pk;  // store pubkey as verification key
+    return out;
+}
 
-        const unsigned char* skchar = keypair.sk.data();
-        const unsigned char* xchar = x.data();
+Bytes OPRF::Unblind(OPRF_BlindedEval eval, Bytes &sk)
+{
+    InitSodium();
 
-        // Compute f(x) = x^{sk}
-        unsigned char fx[crypto_core_ristretto255_BYTES];
-        if (crypto_scalarmult_ristretto255(fx, skchar, xchar) != 0) {
-            panic("Failed to compute F(x)");
-        }
-
-        OPRF_BlindedEval out;
-        out.fx = Bytes(fx, fx + sizeof fx);
-        out.vk = keypair.pk;
-        return out;
+    // Optional: check sizes
+    if (eval.vk.size() != crypto_core_ristretto255_BYTES ||
+        eval.fx.size() != crypto_core_ristretto255_BYTES ||
+        sk.size()       != crypto_core_ristretto255_SCALARBYTES)
+    {
+        throw std::runtime_error("OPRF::Unblind: invalid input size");
     }
 
-    Bytes OPRF::Unblind(OPRF_BlindedEval eval, Bytes& sk) {
-        OPRF::InitSodium();
-        
-        const unsigned char* skchar = sk.data();
-        const unsigned char* pkchar = eval.vk.data();
-        const unsigned char* fxchar = eval.fx.data();
+    const unsigned char* skchar = sk.data();
+    const unsigned char* pkchar = eval.vk.data();
+    const unsigned char* fxchar = eval.fx.data();
 
-        unsigned char neg_sk[crypto_core_ristretto255_SCALARBYTES];
-        unsigned char pk_neg_sk[crypto_core_ristretto255_BYTES];
+    // negative scalar
+    unsigned char neg_sk[crypto_core_ristretto255_SCALARBYTES];
+    crypto_core_ristretto255_scalar_negate(neg_sk, skchar);
 
-        crypto_core_ristretto255_scalar_negate(neg_sk, skchar);
-        
-        if (crypto_scalarmult_ristretto255(pk_neg_sk, neg_sk, pkchar) != 0) {
-            panic("Executing crypto_scalarmult_ristretto255() failed");
-        }
-
-        unsigned char out[crypto_core_ristretto255_BYTES];
-        crypto_core_ristretto255_add(out, fxchar, pk_neg_sk);
-
-        return Bytes(out, out + sizeof out);
+    // pk_neg_sk = pk^(neg_sk)
+    unsigned char pk_neg_sk[crypto_core_ristretto255_BYTES];
+    if (crypto_scalarmult_ristretto255(pk_neg_sk, neg_sk, pkchar) != 0) {
+        throw std::runtime_error("crypto_scalarmult_ristretto255() failed in Unblind()");
     }
 
-    void KeyRotation::StartRotation(int size, int interval) {
+    // out = fx + pk_neg_sk
+    unsigned char out[crypto_core_ristretto255_BYTES];
+    crypto_core_ristretto255_add(out, fxchar, pk_neg_sk);
+
+    return Bytes(out, out + sizeof(out));
+}
+
+//------------------------------------------------------------------------------
+// KEYROTATION IMPLEMENTATIONS
+//------------------------------------------------------------------------------
+
+void KeyRotation::StartRotation(int size, int interval) {
         if (rotationRunning) return;
 
         expiryIndex = -1;
@@ -134,27 +191,34 @@ namespace libcpex {
         keyList.clear();
     }
 
-    bool KeyRotation::IsExpiredWithin(int index, int tmax) {
-        if (index < 0) return false;
-        
-        if (index >= keyList.size()) {
-            panic("index must be between 0 and size of keylist");
-        }
+bool KeyRotation::IsExpiredWithin(int index, int tmax)
+{
+    std::lock_guard<std::mutex> lock(sharedMutex);
 
-        if (index != recentlyExpiredIndex) return false;
-
-        auto currentTime = std::chrono::system_clock::now();
-        auto thresholdTime = currentTime - std::chrono::seconds(tmax);
-
-        return recentlyExpiredTime >= thresholdTime;
+    if (index < 0 || index >= (int)keyList.size()) {
+        throw std::out_of_range("KeyRotation::IsExpiredWithin index out of range");
     }
 
-    KeyRotation::~KeyRotation() { StopRotation(); }
+    if (index != recentlyExpiredIndex) return false;
 
-    OPRF_Keypair KeyRotation::GetKey(int index) { 
-        if (index < 0 || index >= keyList.size()) {
-            panic("index must be between 0 and size of keylist");
-        }
-        return keyList[index];
-    }
+    auto currentTime = std::chrono::system_clock::now();
+    auto thresholdTime = currentTime - std::chrono::seconds(tmax);
+
+    return (recentlyExpiredTime >= thresholdTime);
 }
+
+KeyRotation::~KeyRotation()
+{
+    StopRotation();
+}
+
+OPRF_Keypair KeyRotation::GetKey(int index)
+{
+    std::lock_guard<std::mutex> lock(sharedMutex);
+    if (index < 0 || index >= (int)keyList.size()) {
+        throw std::out_of_range("KeyRotation::GetKey index out of range");
+    }
+    return keyList[index];
+}
+
+} // namespace libcpex

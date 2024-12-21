@@ -12,7 +12,7 @@ SCENARIO("OPRF protocol label generation", "[oprf]") {
         string msg = "Hello World!";
 
         WHEN("blinded to a point on the EC curve by a Party A") {
-            auto b1 = libcpex::OPRF::Blind(&msg);
+            auto b1 = libcpex::OPRF::Blind(msg);
             REQUIRE(b1.x.size() == 32);
             REQUIRE(b1.r.size() == 32);
 
@@ -30,7 +30,7 @@ SCENARIO("OPRF protocol label generation", "[oprf]") {
 
             WHEN("blinding is done by another Party B") {
                 THEN("blinding should not be deterministic") {
-                    auto b2 = libcpex::OPRF::Blind(&msg);
+                    auto b2 = libcpex::OPRF::Blind(msg);
                     REQUIRE(b2.x.size() == 32);
                     REQUIRE(b2.r.size() == 32);
                     REQUIRE(b1.x != b2.x);

@@ -37,7 +37,7 @@ namespace libcpex {
         public:
             static void InitSodium();
             static OPRF_Keypair Keygen();
-            static OPRF_Blinded Blind(const string* msg);
+            static OPRF_Blinded Blind(const std::string &msg);
             static OPRF_BlindedEval Evaluate(const OPRF_Keypair& keypair, const Bytes& x);
             static Bytes Unblind(OPRF_BlindedEval eval, OPRF_Blinded& blinding);
             static Bytes Unblind(OPRF_BlindedEval eval, Bytes& r);

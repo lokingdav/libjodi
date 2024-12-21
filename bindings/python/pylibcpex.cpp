@@ -79,7 +79,7 @@ PYBIND11_MODULE(pylibcpex, module)
         .def_static("blind", [](const py::str& msg) {
             py::gil_scoped_release release;
             string msg_str(msg);
-            OPRF_Blinded result = OPRF::Blind(&msg_str);
+            OPRF_Blinded result = OPRF::Blind(msg_str);
             return py::make_tuple(
                 BytesToPyBytes(result.x), 
                 BytesToPyBytes(result.r)
