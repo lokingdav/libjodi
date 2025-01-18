@@ -85,7 +85,7 @@ def key_rotation():
 def main():
     bench_ciphering()
     bench_oprf()
-    key_rotation()
+    # key_rotation()
 
 if __name__ == "__main__":
     main()

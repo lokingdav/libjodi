@@ -39,7 +39,7 @@ class CMakeBuild(build_ext):
             "-DENABLE_SANITIZERS=OFF",
         ]
 
-        cfg = "Debug" if self.debug else "Release"
+        cfg = "Debug" #if self.debug else "Release"
         build_args = ["--config", cfg]
 
         if platform.system() == "Windows":
