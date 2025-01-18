@@ -5,148 +5,261 @@
 #include "../../src/libcpex/libcpex.hpp"
 
 namespace py = pybind11;
-
 using namespace libcpex;
 
+// Convert py::bytes -> std::vector<uint8_t>
 Bytes PyBytesToBytes(const py::bytes& data) {
+    // This constructor internally calls Python APIs to get the buffer,
+    // so the GIL must be held here.
     std::string datastr(data);
     return Bytes(datastr.begin(), datastr.end());
 }
 
+// Convert std::vector<uint8_t> -> py::bytes
 py::bytes BytesToPyBytes(const Bytes& data) {
-    return py::bytes((char*)data.data(), data.size());
+    // Creating py::bytes(...) touches the Python allocator/objects,
+    // so the GIL must be held as well.
+    return py::bytes(reinterpret_cast<const char*>(data.data()), data.size());
 }
 
 PYBIND11_MODULE(pylibcpex, module)
 {
+    //
+    // Utils
+    //
     py::class_<Utils>(module, "Utils")
         .def_static("hash160", [](const py::bytes& data) {
-            py::gil_scoped_release release;
-            return BytesToPyBytes(Utils::Sha160(PyBytesToBytes(data)));
+            // 1) Convert Python -> C++ with GIL held
+            Bytes input = PyBytesToBytes(data);
+
+            // 2) Release GIL for the pure C++ hashing
+            {
+                py::gil_scoped_release release;
+                input = Utils::Sha160(input);
+            }
+            // GIL is re-acquired automatically after scope ends
+
+            // 3) Return Python object under GIL
+            return BytesToPyBytes(input);
         }, py::arg("data"))
 
         .def_static("hash256", [](const py::bytes& data) {
-            py::gil_scoped_release release;
-            return BytesToPyBytes(Utils::Sha256(PyBytesToBytes(data)));
+            Bytes input = PyBytesToBytes(data);
+            {
+                py::gil_scoped_release release;
+                input = Utils::Sha256(input);
+            }
+            return BytesToPyBytes(input);
         }, py::arg("data"))
 
         .def_static("to_base64", [](const py::bytes& data) {
-            py::gil_scoped_release release;
-            return Utils::EncodeBase64(PyBytesToBytes(data));
+            // `EncodeBase64` returns a std::string (pure C++).
+            // We do not need GIL for that part, but we do need GIL to parse `data`.
+            Bytes input = PyBytesToBytes(data);
+
+            std::string encoded;
+            {
+                py::gil_scoped_release release;
+                encoded = Utils::EncodeBase64(input);
+            }
+            // Returning a C++ std::string to Python is safe after re-acquiring GIL;
+            // pybind11 will convert it to py::str automatically.
+            return encoded;
         }, py::arg("data"))
 
         .def_static("from_base64", [](const py::str& data) {
-            py::gil_scoped_release release;
-            return BytesToPyBytes(Utils::DecodeBase64(data));
+            // Converting py::str -> std::string requires GIL
+            std::string base64_str(data);
+
+            Bytes decoded;
+            {
+                py::gil_scoped_release release;
+                decoded = Utils::DecodeBase64(base64_str);
+            }
+            return BytesToPyBytes(decoded);
         }, py::arg("data"))
 
         .def_static("xor", [](const py::bytes& x, const py::bytes& y) {
-            py::gil_scoped_release release;
-            return BytesToPyBytes(Utils::Xor(PyBytesToBytes(x), PyBytesToBytes(y)));
+            Bytes bx = PyBytesToBytes(x);
+            Bytes by = PyBytesToBytes(y);
+
+            Bytes result;
+            {
+                py::gil_scoped_release release;
+                result = Utils::Xor(bx, by);
+            }
+            return BytesToPyBytes(result);
         }, py::arg("x"), py::arg("y"))
 
-        .def_static("random_bytes", [](const py::size_t size) {
-            py::gil_scoped_release release;
-            return BytesToPyBytes(Utils::RandomBytes(size));
+        .def_static("random_bytes", [](py::size_t size) {
+            // 'size' is just a numeric type, no Python-object calls needed for reading it.
+            Bytes random_data;
+            {
+                py::gil_scoped_release release;
+                random_data = Utils::RandomBytes(size);
+            }
+            return BytesToPyBytes(random_data);
         }, py::arg("size"));
 
+    //
+    // Ciphering
+    //
     py::class_<Ciphering>(module, "Ciphering")
         .def_static("keygen", []() {
-            py::gil_scoped_release release;
-            return BytesToPyBytes(Ciphering::Keygen());
+            Bytes key;
+            {
+                py::gil_scoped_release release;
+                key = Ciphering::Keygen();
+            }
+            return BytesToPyBytes(key);
         })
 
         .def_static("enc", [](const py::bytes& key, const py::bytes& plaintext) {
-            py::gil_scoped_release release;
-            return BytesToPyBytes(Ciphering::Encrypt(PyBytesToBytes(key), PyBytesToBytes(plaintext)));
+            Bytes k = PyBytesToBytes(key);
+            Bytes pt = PyBytesToBytes(plaintext);
+
+            Bytes ct;
+            {
+                py::gil_scoped_release release;
+                ct = Ciphering::Encrypt(k, pt);
+            }
+            return BytesToPyBytes(ct);
         }, py::arg("key"), py::arg("plaintext"))
 
         .def_static("dec", [](const py::bytes& key, const py::bytes& ciphertext) {
-            py::gil_scoped_release release;
-            return BytesToPyBytes(Ciphering::Decrypt(PyBytesToBytes(key), PyBytesToBytes(ciphertext)));
+            Bytes k = PyBytesToBytes(key);
+            Bytes ct = PyBytesToBytes(ciphertext);
+
+            Bytes pt;
+            {
+                py::gil_scoped_release release;
+                pt = Ciphering::Decrypt(k, ct);
+            }
+            return BytesToPyBytes(pt);
         }, py::arg("key"), py::arg("ciphertext"));
 
+    //
+    // OPRF
+    //
     py::class_<OPRF>(module, "Oprf")
         .def_static("keygen", []() {
-            py::gil_scoped_release release;
-            OPRF_Keypair keypair = OPRF::Keygen();
-            return py::make_tuple(
-                BytesToPyBytes(keypair.sk), 
-                BytesToPyBytes(keypair.pk)
-            );
+            OPRF_Keypair kp;
+            {
+                py::gil_scoped_release release;
+                kp = OPRF::Keygen();
+            }
+            return py::make_tuple(BytesToPyBytes(kp.sk),
+                                  BytesToPyBytes(kp.pk));
         })
 
         .def_static("blind", [](const py::str& msg) {
-            py::gil_scoped_release release;
-            string msg_str(msg);
-            OPRF_Blinded result = OPRF::Blind(msg_str);
-            return py::make_tuple(
-                BytesToPyBytes(result.x), 
-                BytesToPyBytes(result.r)
-            );
+            // Convert py::str -> std::string under GIL
+            std::string msg_str(msg);
+
+            OPRF_Blinded blinded;
+            {
+                py::gil_scoped_release release;
+                blinded = OPRF::Blind(msg_str);
+            }
+            return py::make_tuple(BytesToPyBytes(blinded.x),
+                                  BytesToPyBytes(blinded.r));
         }, py::arg("msg"))
 
-        .def_static("evaluate", [](const py::bytes& privk, const py::bytes& publk, const py::bytes& x) {
-            py::gil_scoped_release release;
-            OPRF_Keypair keypair(PyBytesToBytes(privk), PyBytesToBytes(publk));
-            OPRF_BlindedEval eval = OPRF::Evaluate(keypair, PyBytesToBytes(x));
-            return py::make_tuple(
-                BytesToPyBytes(eval.fx), 
-                BytesToPyBytes(eval.vk)
-            );
+        .def_static("evaluate", [](const py::bytes& privk,
+                                   const py::bytes& publk,
+                                   const py::bytes& x) {
+            Bytes sk = PyBytesToBytes(privk);
+            Bytes pk = PyBytesToBytes(publk);
+            Bytes in_x = PyBytesToBytes(x);
+
+            OPRF_BlindedEval eval;
+            {
+                py::gil_scoped_release release;
+                OPRF_Keypair keypair(sk, pk);
+                eval = OPRF::Evaluate(keypair, in_x);
+            }
+            return py::make_tuple(BytesToPyBytes(eval.fx),
+                                  BytesToPyBytes(eval.vk));
         }, py::arg("privk"), py::arg("publk"), py::arg("x"))
 
-        .def_static("unblind", [](const py::bytes& fx, const py::bytes& vk, const py::bytes& r) {
-            py::gil_scoped_release release;
-            OPRF_BlindedEval eval(PyBytesToBytes(fx), PyBytesToBytes(vk));
-            Bytes seck = PyBytesToBytes(r);
-            return BytesToPyBytes(OPRF::Unblind(eval, seck));
+        .def_static("unblind", [](const py::bytes& fx,
+                                  const py::bytes& vk,
+                                  const py::bytes& r) {
+            Bytes fx_bytes = PyBytesToBytes(fx);
+            Bytes vk_bytes = PyBytesToBytes(vk);
+            Bytes r_bytes = PyBytesToBytes(r);
+
+            Bytes unblinded;
+            {
+                py::gil_scoped_release release;
+                OPRF_BlindedEval eval(fx_bytes, vk_bytes);
+                unblinded = OPRF::Unblind(eval, r_bytes);
+            }
+            return BytesToPyBytes(unblinded);
         }, py::arg("fx"), py::arg("vk"), py::arg("r"));
 
+    //
+    // KeyRotation
+    //
     py::class_<KeyRotation, std::shared_ptr<KeyRotation>>(module, "KeyRotation")
         .def("start_rotation", [](KeyRotation &self, int size, int interval) {
-            py::gil_scoped_release release;
-            self.StartRotation(size, interval);
+            {
+                py::gil_scoped_release release;
+                self.StartRotation(size, interval);
+            }
         }, py::arg("size"), py::arg("interval"))
 
         .def("stop_rotation", [](KeyRotation &self) {
-            py::gil_scoped_release release;
-            self.StopRotation();
+            {
+                py::gil_scoped_release release;
+                self.StopRotation();
+            }
         })
 
         .def("is_expired_within", [](KeyRotation &self, int index, int tmax) {
-            py::gil_scoped_release release;
-            return self.IsExpiredWithin(index, tmax);
+            bool result;
+            {
+                py::gil_scoped_release release;
+                result = self.IsExpiredWithin(index, tmax);
+            }
+            return result;
         }, py::arg("index"), py::arg("tmax"))
 
         .def("get_list_size", [](KeyRotation &self) {
-            py::gil_scoped_release release;
-            return self.GetListSize();
+            int size;
+            {
+                py::gil_scoped_release release;
+                size = self.GetListSize();
+            }
+            return size;
         })
 
         .def("get_recently_expired_key", [](KeyRotation &self) {
-            py::gil_scoped_release release;
-            OPRF_Keypair kp = self.GetRecentlyExpiredKey();
-            return py::make_tuple(
-                BytesToPyBytes(kp.sk), 
-                BytesToPyBytes(kp.pk)
-            );
+            OPRF_Keypair kp;
+            {
+                py::gil_scoped_release release;
+                kp = self.GetRecentlyExpiredKey();
+            }
+            return py::make_tuple(BytesToPyBytes(kp.sk),
+                                  BytesToPyBytes(kp.pk));
         })
-        
+
         .def("get_key", [](KeyRotation &self, int index) {
-            py::gil_scoped_release release;
-            OPRF_Keypair kp = self.GetKey(index);
-            return py::make_tuple(
-                BytesToPyBytes(kp.sk), 
-                BytesToPyBytes(kp.pk)
-            );
+            OPRF_Keypair kp;
+            {
+                py::gil_scoped_release release;
+                kp = self.GetKey(index);
+            }
+            return py::make_tuple(BytesToPyBytes(kp.sk),
+                                  BytesToPyBytes(kp.pk));
         }, py::arg("index"))
-        
+
         .def_static("get_instance", []() {
             py::gil_scoped_release release;
             return KeyRotation::GetInstance();
         });
 
+    // Module version
     #ifdef LIBCPEX_VERSION
         module.attr("__version__") = LIBCPEX_VERSION;
     #else
