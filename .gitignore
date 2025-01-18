@@ -36,3 +36,4 @@ build/
 src/libs/
 dist/
 pylibcpex.egg-info/
+.venv/
