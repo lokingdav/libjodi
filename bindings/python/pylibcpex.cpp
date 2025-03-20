@@ -24,6 +24,8 @@ py::bytes BytesToPyBytes(const Bytes& data) {
 
 PYBIND11_MODULE(pylibcpex, module)
 {
+    GlobalInitSodium();
+    
     InitMCL();
 
     //

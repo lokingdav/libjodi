@@ -6,6 +6,8 @@
 using namespace libcpex;
 
 SCENARIO("OPRF protocol label generation", "[oprf]") {
+    GlobalInitSodium();
+    
     auto keypair = libcpex::OPRF::Keygen();
 
     GIVEN("Any message") {

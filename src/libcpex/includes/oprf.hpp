@@ -1,6 +1,7 @@
 #ifndef OPRF_HPP
 #define OPRF_HPP
 
+#include <sodium.h>
 #include <memory>
 #include <random>
 #include <chrono>
@@ -9,6 +10,17 @@
 #include "base.hpp"
 
 namespace libcpex {
+    static void GlobalInitSodium()
+    {
+        static bool initialized = false;
+        if (!initialized) {
+            if (sodium_init() < 0) {
+                throw std::runtime_error("libsodium initialization failed");
+            }
+            initialized = true;
+        }
+    }
+
     class OPRF_Keypair {
         public:
             Bytes sk;
@@ -35,7 +47,6 @@ namespace libcpex {
 
     class OPRF {
         public:
-            static void InitSodium();
             static OPRF_Keypair Keygen();
             static OPRF_Blinded Blind(const std::string &msg);
             static OPRF_BlindedEval Evaluate(const OPRF_Keypair& keypair, const Bytes& x);

@@ -3,16 +3,12 @@
 
 namespace libcpex {
     Bytes Ciphering::Keygen() {
-        OPRF::InitSodium();
-        
         Bytes key(crypto_aead_xchacha20poly1305_ietf_KEYBYTES);
         crypto_aead_xchacha20poly1305_ietf_keygen(key.data());
         return key;
     }
 
     Bytes Ciphering::Encrypt(const Bytes &key, const Bytes &plaintext) {
-        OPRF::InitSodium();
-
         if (key.size() != crypto_aead_xchacha20poly1305_ietf_KEYBYTES) {
             panic("Invalid key size.");
         }
@@ -42,8 +38,6 @@ namespace libcpex {
     }
 
     Bytes Ciphering::Decrypt(const Bytes &key, const Bytes &ciphertext) {
-        OPRF::InitSodium();
-
         if (key.size() != crypto_aead_xchacha20poly1305_ietf_KEYBYTES) {
             panic("Invalid key size.");
         }

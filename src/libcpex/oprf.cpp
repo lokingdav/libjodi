@@ -1,4 +1,3 @@
-#include <sodium.h>
 #include <stdexcept>
 #include <mutex>
 #include <chrono>
@@ -8,33 +7,12 @@
 
 namespace libcpex
 {
-
-static void GlobalInitSodium()
-{
-    // Only call sodium_init() once per process
-    static bool initialized = false;
-    if (!initialized) {
-        if (sodium_init() < 0) {
-            throw std::runtime_error("libsodium initialization failed");
-        }
-        initialized = true;
-    }
-}
-
 //------------------------------------------------------------------------------
 // OPRF IMPLEMENTATIONS
 //------------------------------------------------------------------------------
 
-void OPRF::InitSodium()
-{
-    // Preserve your function name, but do the “only once” init inside
-    GlobalInitSodium();
-}
-
 OPRF_Keypair OPRF::Keygen()
 {
-    InitSodium();
-
     // Generate random secret scalar sk
     unsigned char sk[crypto_core_ristretto255_SCALARBYTES];
     randombytes_buf(sk, sizeof(sk));
@@ -51,8 +29,6 @@ OPRF_Keypair OPRF::Keygen()
 
 OPRF_Blinded OPRF::Blind(const std::string &msg)
 {
-    InitSodium();
-
     // 1. Hash message -> 64 bytes
     unsigned char hashbuf[64];
     crypto_hash_sha512(
@@ -84,8 +60,6 @@ OPRF_Blinded OPRF::Blind(const std::string &msg)
 
 OPRF_BlindedEval OPRF::Evaluate(const OPRF_Keypair &keypair, const Bytes &x)
 {
-    InitSodium();
-
     if (x.size() != crypto_core_ristretto255_BYTES) {
         throw std::runtime_error("OPRF::Evaluate: invalid x size");
     }
@@ -106,8 +80,6 @@ OPRF_BlindedEval OPRF::Evaluate(const OPRF_Keypair &keypair, const Bytes &x)
 
 Bytes OPRF::Unblind(OPRF_BlindedEval eval, Bytes &sk)
 {
-    InitSodium();
-
     // Optional: check sizes
     if (eval.vk.size() != crypto_core_ristretto255_BYTES ||
         eval.fx.size() != crypto_core_ristretto255_BYTES ||

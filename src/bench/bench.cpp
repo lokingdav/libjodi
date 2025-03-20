@@ -114,6 +114,8 @@ void BenchVOPRF() {
 
 int main(int argc, char* argv[])
 {
+    GlobalInitSodium();
+    
     // OPRF
     BenchBlinding();
     BenchEvaluation();
