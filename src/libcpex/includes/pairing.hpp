@@ -6,6 +6,11 @@
 #include <mcl/bn256.hpp>
 
 namespace libcpex {
+    static void InitMCL()
+    {
+        mcl::bn::initPairing();
+    }
+
     class PublicKey {
         static const int MAX_PK_SIZE = 128;
 
@@ -14,18 +19,25 @@ namespace libcpex {
                 return v;
             }
 
-            string ToString() const {
+            Bytes ToBytes() const {
                 uint8_t buf[MAX_PK_SIZE];
                 size_t len = v.serialize(buf, sizeof(buf));
-                Bytes bytes(buf, buf + len);
-                return Utils::EncodeBase64(bytes);
+                return Bytes(buf, buf + len);
+            }
+
+            string ToString() const {
+                return Utils::EncodeBase64(ToBytes());
+            }
+
+            static PublicKey FromBytes(Bytes bytes) {
+                PublicKey pk;
+                pk.v.deserialize(bytes.data(), bytes.size());
+                return pk;
             }
 
             static PublicKey FromString(string s) {
-                PublicKey pk;
                 Bytes bytes = Utils::DecodeBase64(s);
-                pk.v.deserialize(bytes.data(), bytes.size());
-                return pk;
+                return FromBytes(bytes);
             }
 
             static mcl::bn::G2 GetBase() {
@@ -52,18 +64,25 @@ namespace libcpex {
             
             PrivateKey(mcl::bn::Fr s): s(s) {};
 
-            string ToString() const {
+            Bytes ToBytes() const {
                 uint8_t buf[SK_SIZE];
                 size_t len = s.serialize(buf, sizeof(buf));
-                Bytes bytes(buf, buf + len);
-                return Utils::EncodeBase64(bytes);
+                return Bytes(buf, buf + len);
+            }
+
+            string ToString() const {
+                return Utils::EncodeBase64(ToBytes());
+            }
+
+            static PrivateKey FromBytes(Bytes bytes) {
+                PrivateKey sk;
+                sk.s.deserialize(bytes.data(), bytes.size());
+                return sk;
             }
 
             static PrivateKey FromString(string s) {
-                PrivateKey sk;
                 Bytes bytes = Utils::DecodeBase64(s);
-                sk.s.deserialize(bytes.data(), bytes.size());
-                return sk;
+                return FromBytes(bytes);
             }
 
             static PrivateKey Keygen() {
@@ -103,18 +122,24 @@ namespace libcpex {
 
             Point(mcl::bn::G1 v): v(v) {};
 
-            string ToString() const {
+            Bytes ToBytes() const {
                 uint8_t buf[MAX_Pt_SIZE];
                 size_t len = v.serialize(buf, sizeof(buf));
-                Bytes bytes(buf, buf + len);
-                return Utils::EncodeBase64(bytes);
+                return Bytes(buf, buf + len);
+            }
+
+            string ToString() const {
+                return Utils::EncodeBase64(ToBytes());
+            }
+
+            static Point FromBytes(Bytes bytes) {
+                Point p;
+                p.v.deserialize(bytes.data(), bytes.size());
+                return p;
             }
 
             static Point FromString(string s) {
-                Point p;
-                Bytes bytes = Utils::DecodeBase64(s);
-                p.v.deserialize(bytes.data(), bytes.size());
-                return p;
+                return FromBytes(Utils::DecodeBase64(s));
             }
 
             static Point HashToPoint(string m) {

@@ -6,7 +6,7 @@
 using namespace libcpex;
 
 SCENARIO("VOPRF protocol", "[VOPRF]") {
-    mcl::bn::initPairing();
+    InitMCL();
 
     PrivateKey sk = PrivateKey::Keygen();
     PublicKey pk = sk.GetPublicKey();

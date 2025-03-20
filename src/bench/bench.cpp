@@ -77,7 +77,7 @@ void BenchDecryption() {
 }
 
 void BenchVOPRF() {
-    mcl::bn::initPairing();
+    InitMCL();
 
     PrivateKey sk = PrivateKey::Keygen();
     PublicKey pk = sk.GetPublicKey();

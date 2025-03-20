@@ -3,7 +3,6 @@
 
 #include "base.hpp"
 #include "pairing.hpp"
-#include <mcl/bn256.hpp>
 
 namespace libcpex {
     class VOPRF_Blinded {

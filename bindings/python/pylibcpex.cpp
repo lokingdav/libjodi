@@ -24,6 +24,8 @@ py::bytes BytesToPyBytes(const Bytes& data) {
 
 PYBIND11_MODULE(pylibcpex, module)
 {
+    InitMCL();
+
     //
     // Utils
     //
@@ -258,6 +260,70 @@ PYBIND11_MODULE(pylibcpex, module)
             py::gil_scoped_release release;
             return KeyRotation::GetInstance();
         });
+
+    /**
+     * VOPRF
+     */
+    py::class_<OPRF>(module, "Oprf")
+        .def_static("keygen", []() {
+            PrivateKey sk;
+            PublicKey pk;
+            {
+                py::gil_scoped_release release;
+                sk = PrivateKey::Keygen();
+                pk = sk.GetPublicKey();
+            }
+            return py::make_tuple(BytesToPyBytes(sk.ToBytes()),
+                                  BytesToPyBytes(pk.ToBytes()));
+        })
+        .def_static("blind", [](const py::str& msg) {
+            std::string msg_str(msg);
+
+            VOPRF_Blinded blinded;
+            {
+                py::gil_scoped_release release;
+                blinded = VOPRF::Blind(msg_str);
+            }
+            return py::make_tuple(BytesToPyBytes(blinded.x.ToBytes()),
+                                  BytesToPyBytes(blinded.r.ToBytes()));
+        }, py::arg("msg"))
+
+        .def_static("evaluate", [](const py::bytes& k, const py::bytes& x) {
+            PrivateKey sk = PrivateKey::FromBytes(PyBytesToBytes(k));
+            Point in_x = Point::FromBytes(PyBytesToBytes(x));
+
+            Point fx;
+            {
+                py::gil_scoped_release release;
+                fx = VOPRF::Evaluate(sk, in_x);
+            }
+            return BytesToPyBytes(fx.ToBytes());
+        }, py::arg("sk"), py::arg("x"))
+
+        .def_static("unblind", [](const py::bytes& fx, const py::bytes& r) {
+            Point fx_bytes = Point::FromBytes(PyBytesToBytes(fx));
+            PrivateKey r_bytes = PrivateKey::FromBytes(PyBytesToBytes(r));
+
+            Point unblinded;
+            {
+                py::gil_scoped_release release;
+                unblinded = VOPRF::Unblind(fx_bytes, r_bytes);
+            }
+            return BytesToPyBytes(unblinded.ToBytes());
+        }, py::arg("fx"), py::arg("r"))
+
+        .def_static("verify", [](const py::bytes& _pk, const py::bytes& x, const py::bytes& y) {
+            PublicKey pk = PublicKey::FromBytes(PyBytesToBytes(_pk));
+            Point in_x = Point::FromBytes(PyBytesToBytes(x));
+            Point in_y = Point::FromBytes(PyBytesToBytes(y));
+
+            bool valid;
+            {
+                py::gil_scoped_release release;
+                valid = VOPRF::Verify(pk, in_x, in_y);
+            }
+            return valid;
+        }, py::arg("pk"), py::arg("x"), py::arg("y"));
 
     // Module version
     #ifdef LIBCPEX_VERSION
