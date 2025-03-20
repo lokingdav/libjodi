@@ -64,6 +64,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
+# Find mcl
+FetchContent_Declare(
+  mcl
+  GIT_REPOSITORY https://github.com/herumi/mcl.git
+  GIT_TAG v2.14
+)
+FetchContent_MakeAvailable(mcl)
+
 # libcurl (remove if you don't need it)
 find_package(CURL REQUIRED)
 
@@ -109,6 +117,7 @@ target_link_libraries(libcpex
     nlohmann_json::nlohmann_json
     CURL::libcurl
     ${SODIUM_LIBRARY}
+    mcl
   PRIVATE
     Threads::Threads
 )
