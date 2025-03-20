@@ -4,6 +4,8 @@
 #include "includes/base.hpp"
 #include "includes/http.hpp"
 #include "includes/oprf.hpp"
+#include "includes/pairing.hpp"
+#include "includes/voprf.hpp"
 #include "includes/utils.hpp"
 #include "includes/dht.hpp"
 #include "includes/groupsig.hpp"
