@@ -76,6 +76,42 @@ void BenchDecryption() {
     endTimer("Ciphering::Decrypt", start, numIters);
 }
 
+void BenchVOPRF() {
+    mcl::bn::initPairing();
+
+    PrivateKey sk = PrivateKey::Keygen();
+    PublicKey pk = sk.GetPublicKey();
+    string msg = "hello world";
+
+    VOPRF_Blinded blinded;
+    auto start = startTimer();
+    for (auto i = 0; i < numIters; i++) {
+        blinded = VOPRF::Blind(msg);
+    }
+    endTimer("VOPRF::Blind", start, numIters);
+
+    Point fx;
+    start = startTimer();
+    for (auto i = 0; i < numIters; i++) {
+        fx = VOPRF::Evaluate(sk, blinded.x);
+    }
+    endTimer("VOPRF::Evaluate", start, numIters);
+
+    Point y;
+    start = startTimer();
+    for (auto i = 0; i < numIters; i++) {
+        y = VOPRF::Unblind(fx, blinded.r);
+    }
+    endTimer("VOPRF::Unblind", start, numIters);
+
+    bool verified;
+    start = startTimer();
+    for (auto i = 0; i < numIters; i++) {
+        verified = VOPRF::Verify(pk, blinded.x, fx);
+    }
+    endTimer("VOPRF::Verify", start, numIters);
+}
+
 int main(int argc, char* argv[])
 {
     // OPRF
@@ -86,6 +122,9 @@ int main(int argc, char* argv[])
     // Ciphering
     BenchEncryption();
     BenchDecryption();
+
+    // VOPRF
+    BenchVOPRF();
 
     return 0;
 }
