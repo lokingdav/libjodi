@@ -1,5 +1,5 @@
 import time
-from pylibcpex import Oprf, Ciphering, Utils, KeyRotation
+from pylibcpex import Oprf, Voprf, Ciphering, Utils, KeyRotation
 
 numIters = 1000
 
@@ -43,6 +43,48 @@ def bench_oprf():
     for i in range(numIters):
         digest = Oprf.unblind(fx, vk, r)
     endTimer("Oprf::unblind", start, numIters)
+    
+def bench_voprf():
+    callDetails = "+123456789|+1987654321|1733427398"
+    (sk, pk) = Voprf.keygen()
+
+    # Check for correctness first
+    (p1, x1, r1) = Voprf.blind(msg=callDetails)
+    (p2, x2, r2) = Voprf.blind(msg=callDetails)
+    assert(p1 == p2) # hashed points must match
+    assert(x1 != x2) # blindings must differ
+    assert(r1 != r2) # random scalars must differ
+    
+    fx1 = Voprf.evaluate(sk=sk, x=x1)
+    fx2 = Voprf.evaluate(sk=sk, x=x2)
+    assert(fx1 != fx2)
+    
+    digest1 = Voprf.unblind(fx=fx1, r=r1)
+    digest2 = Voprf.unblind(fx=fx2, r=r2)
+    assert(digest1 == digest2)
+    
+    assert(Voprf.verify(pk=pk, p=p1, y=digest1))
+    assert(Voprf.verify(pk=pk, p=p2, y=digest2))
+
+    start = startTimer()
+    for i in range(numIters):
+        (p, x, r) = Voprf.blind(msg=callDetails)
+    endTimer("Voprf::blind", start, numIters)
+
+    start = startTimer()
+    for i in range(numIters):
+        fx = Voprf.evaluate(sk=sk, x=x)
+    endTimer("Voprf::evaluate", start, numIters)
+
+    start = startTimer()
+    for i in range(numIters):
+        digest = Voprf.unblind(fx=fx, r=r)
+    endTimer("Voprf::unblind", start, numIters)
+    
+    start = startTimer()
+    for i in range(numIters):
+        assert Voprf.verify(pk=pk, p=p, y=digest)
+    endTimer("Voprf::verify", start, numIters)
 
 def bench_ciphering():
     key = Ciphering.keygen()
@@ -86,6 +128,7 @@ def main():
     bench_ciphering()
     bench_oprf()
     # key_rotation()
+    bench_voprf()
 
 if __name__ == "__main__":
     main()
