@@ -266,7 +266,7 @@ PYBIND11_MODULE(pylibcpex, module)
     /**
      * VOPRF
      */
-    py::class_<OPRF>(module, "Voprf")
+    py::class_<VOPRF>(module, "Voprf")
         .def_static("keygen", []() {
             PrivateKey sk;
             PublicKey pk;
@@ -286,8 +286,11 @@ PYBIND11_MODULE(pylibcpex, module)
                 py::gil_scoped_release release;
                 blinded = VOPRF::Blind(msg_str);
             }
-            return py::make_tuple(BytesToPyBytes(blinded.x.ToBytes()),
-                                  BytesToPyBytes(blinded.r.ToBytes()));
+            return py::make_tuple(
+                BytesToPyBytes(blinded.p.ToBytes()),
+                BytesToPyBytes(blinded.x.ToBytes()),
+                BytesToPyBytes(blinded.r.ToBytes())
+            );
         }, py::arg("msg"))
 
         .def_static("evaluate", [](const py::bytes& k, const py::bytes& x) {
@@ -314,18 +317,18 @@ PYBIND11_MODULE(pylibcpex, module)
             return BytesToPyBytes(unblinded.ToBytes());
         }, py::arg("fx"), py::arg("r"))
 
-        .def_static("verify", [](const py::bytes& _pk, const py::bytes& x, const py::bytes& y) {
-            PublicKey pk = PublicKey::FromBytes(PyBytesToBytes(_pk));
-            Point in_x = Point::FromBytes(PyBytesToBytes(x));
-            Point in_y = Point::FromBytes(PyBytesToBytes(y));
+        .def_static("verify", [](const py::bytes& vk, const py::bytes& p, const py::bytes& y) {
+            PublicKey pk = PublicKey::FromBytes(PyBytesToBytes(vk));
+            Point hash = Point::FromBytes(PyBytesToBytes(p));
+            Point digest = Point::FromBytes(PyBytesToBytes(y));
 
             bool valid;
             {
                 py::gil_scoped_release release;
-                valid = VOPRF::Verify(pk, in_x, in_y);
+                valid = VOPRF::Verify(pk, hash, digest);
             }
             return valid;
-        }, py::arg("pk"), py::arg("x"), py::arg("y"));
+        }, py::arg("pk"), py::arg("p"), py::arg("y"));
 
     // Module version
     #ifdef LIBCPEX_VERSION

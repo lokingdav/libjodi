@@ -9,8 +9,10 @@ namespace libcpex {
         public:
             PrivateKey r;
             Point x;
+            Point p;
+
             VOPRF_Blinded() {};
-            VOPRF_Blinded(PrivateKey r, Point x): r(r), x(x) {};
+            VOPRF_Blinded(PrivateKey r, Point x, Point p): r(r), x(x), p(p) {};
     };
 
     class VOPRF {

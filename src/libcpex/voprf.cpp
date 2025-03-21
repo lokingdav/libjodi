@@ -3,8 +3,9 @@
 namespace libcpex {
     VOPRF_Blinded VOPRF::Blind(const std::string &msg) {
         VOPRF_Blinded blinded;
+        blinded.p = Point::HashToPoint(msg);
         blinded.r = PrivateKey::Keygen();
-        blinded.x = Point::Mul(Point::HashToPoint(msg), blinded.r);
+        blinded.x = Point::Mul(blinded.p, blinded.r);
         return blinded;
     }
 

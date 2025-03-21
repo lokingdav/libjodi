@@ -68,22 +68,26 @@ SCENARIO("VOPRF protocol", "[VOPRF]") {
 
     GIVEN("A client, server and a message") {
         string m = "hello world";
+        Point point = Point::HashToPoint(m);
 
         THEN("the the client should be able to blind msg") {
             VOPRF_Blinded blinded = VOPRF::Blind(m);
             REQUIRE(blinded.x.ToString().size() > 0);
             REQUIRE(blinded.r.ToString().size() > 0);
+            REQUIRE(blinded.p.ToString().size() > 0);
+            REQUIRE(blinded.p == point);
+
 
             THEN("the server should be able to evaluate the blinded message") {
                 Point fx = VOPRF::Evaluate(sk, blinded.x);
                 REQUIRE(fx.ToString().size() > 0);
 
                 THEN("the client should be able to unblind the evaluated message") {
-                    Point f = VOPRF::Unblind(fx, blinded.r);
-                    REQUIRE(f.ToString().size() > 0);
+                    Point y = VOPRF::Unblind(fx, blinded.r);
+                    REQUIRE(y.ToString().size() > 0);
 
                     THEN("the client should be able to verify the evaluated message") {
-                        bool ok = VOPRF::Verify(pk, blinded.x, fx);
+                        bool ok = VOPRF::Verify(pk, blinded.p, y);
                         REQUIRE(ok);
                     }
                 }
