@@ -4,6 +4,7 @@ Library for Control Plan Extension (CPeX is pronounced as "spec")
 ## Dependencies
 - Curl
 - libsodium-dev (to be configured)
+- mcl from https://github.com/herumi/mcl.git
 
 ** Install System-wide dependencies**
 ```bash
