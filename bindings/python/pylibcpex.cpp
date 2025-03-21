@@ -266,7 +266,7 @@ PYBIND11_MODULE(pylibcpex, module)
     /**
      * VOPRF
      */
-    py::class_<OPRF>(module, "Oprf")
+    py::class_<OPRF>(module, "Voprf")
         .def_static("keygen", []() {
             PrivateKey sk;
             PublicKey pk;
