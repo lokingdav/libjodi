@@ -37,28 +37,28 @@ SCENARIO("VOPRF protocol", "[VOPRF]") {
 
             REQUIRE(p.ToString().size() > 0);
 
-            THEN("it should be serializable") {
+            THEN("the point should be serializable") {
                 string pStr = p.ToString();
                 REQUIRE(pStr.size() > 0);
                 Point p2 = Point::FromString(pStr);
                 REQUIRE(p == p2);
             }
 
-            THEN("it should be deterministic") {
+            THEN("the point should be deterministic") {
                 Point p2 = Point::HashToPoint(m);
                 REQUIRE(p == p2);
             }
 
-            THEN("it should be unique") {
+            THEN("the point should be unique") {
                 Point p2 = Point::HashToPoint(m + "!");
                 REQUIRE(p != p2);
             }
 
-            THEN("it should be evaluatable") {
+            THEN("the point should be evaluatable") {
                 Point p2 = Point::Mul(p, sk);
                 REQUIRE(p2.ToString().size() > 0);
 
-                THEN("it should be invertible") {
+                THEN("the evaluated point should be invertible") {
                     Point p3 = Point::Mul(p2, sk.Inverse());
                     REQUIRE(p == p3);
                 }
@@ -74,8 +74,6 @@ SCENARIO("VOPRF protocol", "[VOPRF]") {
             VOPRF_Blinded blinded = VOPRF::Blind(m);
             REQUIRE(blinded.x.ToString().size() > 0);
             REQUIRE(blinded.r.ToString().size() > 0);
-            REQUIRE(blinded.p.ToString().size() > 0);
-            REQUIRE(blinded.p == point);
 
 
             THEN("the server should be able to evaluate the blinded message") {
@@ -87,7 +85,7 @@ SCENARIO("VOPRF protocol", "[VOPRF]") {
                     REQUIRE(y.ToString().size() > 0);
 
                     THEN("the client should be able to verify the evaluated message") {
-                        bool ok = VOPRF::Verify(pk, blinded.p, y);
+                        bool ok = VOPRF::Verify(pk, m, y);
                         REQUIRE(ok);
                     }
                 }

@@ -3,9 +3,8 @@
 namespace libcpex {
     VOPRF_Blinded VOPRF::Blind(const std::string &msg) {
         VOPRF_Blinded blinded;
-        blinded.p = Point::HashToPoint(msg);
         blinded.r = PrivateKey::Keygen();
-        blinded.x = Point::Mul(blinded.p, blinded.r);
+        blinded.x = Point::Mul(Point::HashToPoint(msg), blinded.r);
         return blinded;
     }
 
@@ -17,8 +16,8 @@ namespace libcpex {
         return Point::Mul(x, sk);
     }
 
-    bool VOPRF::Verify(const PublicKey& pk, const Point& x, const Point& y) {
-        Pairing e1 = Pairing::Pair(x, pk);
+    bool VOPRF::Verify(const PublicKey& pk, const string& x, const Point& y) {
+        Pairing e1 = Pairing::Pair(Point::HashToPoint(x), pk);
         Pairing e2 = Pairing::Pair(y, PublicKey::GetBase());
         return e1 == e2;
     }

@@ -107,7 +107,7 @@ void BenchVOPRF() {
     bool verified;
     start = startTimer();
     for (auto i = 0; i < numIters; i++) {
-        verified = VOPRF::Verify(pk, blinded.p, y);
+        verified = VOPRF::Verify(pk, msg, y);
     }
     endTimer("VOPRF::Verify", start, numIters);
 }
