@@ -269,14 +269,14 @@ PYBIND11_MODULE(pylibcpex, module)
     py::class_<VOPRF>(module, "Voprf")
         .def_static("keygen", []() {
             PrivateKey sk;
-            PublicKey pk;
+            PublicKey vk;
             {
                 py::gil_scoped_release release;
                 sk = PrivateKey::Keygen();
-                pk = sk.GetPublicKey();
+                vk = sk.GetPublicKey();
             }
             return py::make_tuple(BytesToPyBytes(sk.ToBytes()),
-                                  BytesToPyBytes(pk.ToBytes()));
+                                  BytesToPyBytes(vk.ToBytes()));
         })
         .def_static("blind", [](const py::str& msg) {
             std::string msg_str(msg);
@@ -287,7 +287,6 @@ PYBIND11_MODULE(pylibcpex, module)
                 blinded = VOPRF::Blind(msg_str);
             }
             return py::make_tuple(
-                BytesToPyBytes(blinded.p.ToBytes()),
                 BytesToPyBytes(blinded.x.ToBytes()),
                 BytesToPyBytes(blinded.r.ToBytes())
             );
@@ -317,18 +316,18 @@ PYBIND11_MODULE(pylibcpex, module)
             return BytesToPyBytes(unblinded.ToBytes());
         }, py::arg("fx"), py::arg("r"))
 
-        .def_static("verify", [](const py::bytes& vk, const py::bytes& p, const py::bytes& y) {
+        .def_static("verify", [](const py::bytes& vk, const py::str& msg, const py::bytes& y) {
             PublicKey pk = PublicKey::FromBytes(PyBytesToBytes(vk));
-            Point hash = Point::FromBytes(PyBytesToBytes(p));
             Point digest = Point::FromBytes(PyBytesToBytes(y));
+            std::string msg_str(msg);
 
             bool valid;
             {
                 py::gil_scoped_release release;
-                valid = VOPRF::Verify(pk, hash, digest);
+                valid = VOPRF::Verify(pk, msg_str, digest);
             }
             return valid;
-        }, py::arg("pk"), py::arg("p"), py::arg("y"));
+        }, py::arg("vk"), py::arg("msg"), py::arg("y"));
 
     // Module version
     #ifdef LIBCPEX_VERSION
