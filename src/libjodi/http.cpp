@@ -9,7 +9,7 @@
 
 #include "./includes/http.hpp"
 
-namespace libcpex {
+namespace libjodi {
     static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
         std::string* str = (std::string*) userp;
         size_t totalSize = size * nmemb;

@@ -1,5 +1,5 @@
 import asyncio, time, random, traceback
-from pylibcpex import Oprf, Ciphering, Utils, KeyRotation
+from pylibjodi import Oprf, Ciphering, Utils, KeyRotation
 
 def func1(callDetails, sk, pk):
     (x1, r1) = Oprf.blind(callDetails)

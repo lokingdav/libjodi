@@ -2,10 +2,10 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "../../src/libcpex/libcpex.hpp"
+#include "../../src/libjodi/libjodi.hpp"
 
 namespace py = pybind11;
-using namespace libcpex;
+using namespace libjodi;
 
 // Convert py::bytes -> std::vector<uint8_t>
 Bytes PyBytesToBytes(const py::bytes& data) {
@@ -22,7 +22,7 @@ py::bytes BytesToPyBytes(const Bytes& data) {
     return py::bytes(reinterpret_cast<const char*>(data.data()), data.size());
 }
 
-PYBIND11_MODULE(pylibcpex, module)
+PYBIND11_MODULE(pylibjodi, module)
 {
     GlobalInitSodium();
     
@@ -330,8 +330,8 @@ PYBIND11_MODULE(pylibcpex, module)
         }, py::arg("vk"), py::arg("msg"), py::arg("y"));
 
     // Module version
-    #ifdef LIBCPEX_VERSION
-        module.attr("__version__") = LIBCPEX_VERSION;
+    #ifdef LIBJODI_VERSION
+        module.attr("__version__") = LIBJODI_VERSION;
     #else
         module.attr("__version__") = "dev";
     #endif

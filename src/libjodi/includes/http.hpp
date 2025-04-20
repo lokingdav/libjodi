@@ -9,7 +9,7 @@
 
 using namespace nlohmann;
 
-namespace libcpex {
+namespace libjodi {
     struct Request {
         std::string endpoint;
         std::map<std::string, std::string> body;

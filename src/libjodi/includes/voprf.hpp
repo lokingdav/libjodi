@@ -4,7 +4,7 @@
 #include "base.hpp"
 #include "pairing.hpp"
 
-namespace libcpex {
+namespace libjodi {
     class VOPRF_Blinded {
         public:
             PrivateKey r;

@@ -13,7 +13,7 @@ using std::map;
 typedef vector<unsigned char> Bytes;
 typedef map<std::string, Bytes> BytesMap;
 
-namespace libcpex {
+namespace libjodi {
 
 }
 

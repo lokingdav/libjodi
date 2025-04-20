@@ -7,9 +7,9 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(pybind11)
 
-pybind11_add_module(pylibcpex ${CMAKE_CURRENT_SOURCE_DIR}/pylibcpex.cpp)
-target_link_libraries(pylibcpex PRIVATE libcpex)
+pybind11_add_module(pylibjodi ${CMAKE_CURRENT_SOURCE_DIR}/pylibjodi.cpp)
+target_link_libraries(pylibjodi PRIVATE libjodi)
 
 if((NOT MSVC) AND (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin"))
-  target_link_options(pylibcpex PRIVATE -Wl,-Bsymbolic)
+  target_link_options(pylibjodi PRIVATE -Wl,-Bsymbolic)
 endif()

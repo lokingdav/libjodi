@@ -1,5 +1,5 @@
 pip install build
-pip uninstall pylibcpex
-rm -rf dist pylibcpex.egg-info
+pip uninstall pylibjodi
+rm -rf dist pylibjodi.egg-info
 python -m build
 pip install dist/*.whl

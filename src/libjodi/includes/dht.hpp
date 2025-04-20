@@ -1,5 +1,5 @@
-#ifndef CPEX_DHT
-#define CPEX_DHT
+#ifndef JODI_DHT
+#define JODI_DHT
 
 #include "base.hpp"
 #include <vector>
@@ -7,32 +7,32 @@
 #include <thread>
 #include <mutex>
 
-namespace libcpex {
-    struct CpexNode {
+namespace libjodi {
+    struct JodiNode {
         std::string id;
         std::string baseUrl;
         bool isHealthy = false;
     };
 
-    typedef std::vector<CpexNode> CpexNodes;
+    typedef std::vector<JodiNode> JodiNodes;
 
-    class CpexDHT {
+    class JodiDHT {
         public:
-            // CpexDHT is a singleton class
-            static CpexDHT& getInstance() {
-                static CpexDHT instance;
+            // JodiDHT is a singleton class
+            static JodiDHT& getInstance() {
+                static JodiDHT instance;
                 return instance;
             }
 
-            CpexDHT(const CpexDHT&) = delete;
-            CpexDHT& operator=(const CpexDHT&) = delete;
+            JodiDHT(const JodiDHT&) = delete;
+            JodiDHT& operator=(const JodiDHT&) = delete;
 
-            std::vector<CpexNode> FindNodes(Bytes key, size_t count);
+            std::vector<JodiNode> FindNodes(Bytes key, size_t count);
             void StartDiscovery(std::string url);
             void StopDiscovery();
 
         private:
-            std::vector<CpexNode> nodes;
+            std::vector<JodiNode> nodes;
             bool discoveryRunning = false;
             bool stopDiscoveryFlag = false;
             std::thread discoveryThread;
@@ -40,9 +40,9 @@ namespace libcpex {
             std::string discoveryUrl;
 
             // Private constructor and destructor to enforce singletons
-            CpexDHT();  
-            ~CpexDHT();
+            JodiDHT();  
+            ~JodiDHT();
     };
 }
 
-#endif // CPEX_DHT
+#endif // JODI_DHT

@@ -1,5 +1,5 @@
-# cpex
-Library for Control Plan Extension (CPeX is pronounced as "spec")
+# jodi
+Library for Control Plan Extension (Jodi is pronounced as "spec")
 
 ## Dependencies
 - Curl

@@ -5,7 +5,7 @@
 #include "utils.hpp"
 #include <mcl/bn256.hpp>
 
-namespace libcpex {
+namespace libjodi {
     static void InitMCL()
     {
         mcl::bn::initPairing();

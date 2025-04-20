@@ -1,7 +1,7 @@
 #include <sodium.h>
-#include "libcpex.hpp"
+#include "libjodi.hpp"
 
-namespace libcpex {
+namespace libjodi {
     string Utils::BytesToString(Bytes const &data) {
         return string(data.begin(), data.end());
     }

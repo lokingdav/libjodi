@@ -1,9 +1,9 @@
-#ifndef CPEX_GROUPSIG_HPP
-#define CPEX_GROUPSIG_HPP
+#ifndef JODI_GROUPSIG_HPP
+#define JODI_GROUPSIG_HPP
 
 #include "base.hpp"
 
-namespace libcpex {
+namespace libjodi {
     class Groupsig {
         public:
             Groupsig();
@@ -12,4 +12,4 @@ namespace libcpex {
     };
 }
 
-#endif // CPEX_GROUPSIG_HPP
+#endif // JODI_GROUPSIG_HPP

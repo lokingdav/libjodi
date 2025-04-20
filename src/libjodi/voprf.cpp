@@ -1,6 +1,6 @@
 #include "voprf.hpp"
 
-namespace libcpex {
+namespace libjodi {
     VOPRF_Blinded VOPRF::Blind(const std::string &msg) {
         VOPRF_Blinded blinded;
         blinded.r = PrivateKey::Keygen();
@@ -21,4 +21,4 @@ namespace libcpex {
         Pairing e2 = Pairing::Pair(y, PublicKey::GetBase());
         return e1 == e2;
     }
-} // namespace libcpex
+} // namespace libjodi

@@ -1,7 +1,7 @@
 #include <sodium.h>
-#include "libcpex.hpp"
+#include "libjodi.hpp"
 
-namespace libcpex {
+namespace libjodi {
     Bytes Ciphering::Keygen() {
         Bytes key(crypto_aead_xchacha20poly1305_ietf_KEYBYTES);
         crypto_aead_xchacha20poly1305_ietf_keygen(key.data());

@@ -1,11 +1,11 @@
 # Python bindings
-Python bindings for the libcpex library.
+Python bindings for the libjodi library.
 
 **Requirements**
 
 Requires Python 3.8+
 
-**Installing pylibcpex and Dependencies**
+**Installing pylibjodi and Dependencies**
 
 Installation instructions...
 
@@ -18,7 +18,7 @@ conda install -c conda-forge libsodium curl
 ```
 
 ```bash
-cd /path/to/libcpex # navigate to the root of the libcpex repository
+cd /path/to/libjodi # navigate to the root of the libjodi repository
 pip install build # if you don't have it installed
 python -m build # if this fails try: python -m build --no-isolation
 pip install dist/*.whl # install the generated wheel file
@@ -27,5 +27,5 @@ pip install dist/*.whl # install the generated wheel file
 **Basic Usage**
 ```python
 
-import pylibcpex
+import pylibjodi
 ```

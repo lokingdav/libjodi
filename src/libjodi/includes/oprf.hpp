@@ -9,7 +9,7 @@
 
 #include "base.hpp"
 
-namespace libcpex {
+namespace libjodi {
     static void GlobalInitSodium()
     {
         static bool initialized = false;

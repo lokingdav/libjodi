@@ -1,9 +1,9 @@
 #include <sodium.h>
 #include <chrono>
 
-#include "../libcpex/libcpex.hpp"
+#include "../libjodi/libjodi.hpp"
 
-using namespace libcpex;
+using namespace libjodi;
 
 const int numIters = 1000;
 string callDetails = "+123456789|+1987654321|1733427398";

@@ -1,6 +1,6 @@
-#include "libcpex.hpp"
+#include "libjodi.hpp"
 
-namespace libcpex {
+namespace libjodi {
     void print(string message) {
         std::cout << message << std::endl;
     }

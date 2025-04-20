@@ -1,5 +1,5 @@
-#ifndef LIBCPEX_H
-#define LIBCPEX_H
+#ifndef LIBJODI_H
+#define LIBJODI_H
 
 #include "includes/base.hpp"
 #include "includes/http.hpp"
@@ -11,7 +11,7 @@
 #include "includes/groupsig.hpp"
 #include "includes/ciphering.hpp"
 
-namespace libcpex {
+namespace libjodi {
     void panic(string error);
     void print(string message);
     void printlist(vector<uint8_t> message);
@@ -21,4 +21,4 @@ namespace libcpex {
     void RetrieveMessage(vector<uint8_t>callId, vector<uint8_t>gsk);
 }
 
-#endif // LIBCPEX_H
+#endif // LIBJODI_H

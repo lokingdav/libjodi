@@ -1,5 +1,5 @@
 import time
-from pylibcpex import Oprf, Voprf, Ciphering, Utils, KeyRotation
+from pylibjodi import Oprf, Voprf, Ciphering, Utils, KeyRotation
 
 numIters = 1000
 

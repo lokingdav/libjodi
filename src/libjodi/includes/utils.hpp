@@ -1,9 +1,9 @@
-#ifndef CPEX_UTILS_HPP
-#define CPEX_UTILS_HPP
+#ifndef JODI_UTILS_HPP
+#define JODI_UTILS_HPP
 
 #include "base.hpp"
 
-namespace libcpex {
+namespace libjodi {
     class Utils {
         public:
             Utils();
@@ -23,4 +23,4 @@ namespace libcpex {
     };
 }
 
-#endif // CPEX_UTILS_HPP
+#endif // JODI_UTILS_HPP

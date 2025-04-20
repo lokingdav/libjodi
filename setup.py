@@ -6,7 +6,7 @@ import sys
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
-name = "pylibcpex"
+name = "pylibjodi"
 
 
 class CMakeExtension(Extension):
@@ -34,8 +34,8 @@ class CMakeBuild(build_ext):
         cmake_args = [
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
             "-DPYTHON_EXECUTABLE=" + sys.executable,
-            "-DBUILD_LIBCPEX_TESTS=OFF",
-            "-DBUILD_LIBCPEX_BENCHMARKS=OFF",
+            "-DBUILD_LIBJODI_TESTS=OFF",
+            "-DBUILD_LIBJODI_BENCHMARKS=OFF",
             "-DENABLE_SANITIZERS=OFF",
         ]
 
@@ -74,7 +74,7 @@ setup(
     install_requires=["wheel"],
     long_description=open("bindings/python/README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/lokingdav/libcpex",
+    url="https://github.com/lokingdav/libjodi",
     ext_modules=[CMakeExtension(name, ".")],
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,

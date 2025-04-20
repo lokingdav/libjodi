@@ -3,9 +3,9 @@
 #include <chrono>
 #include <condition_variable>
 #include <thread>
-#include "libcpex.hpp"  // Your existing .hpp with class definitions
+#include "libjodi.hpp"  // Your existing .hpp with class definitions
 
-namespace libcpex
+namespace libjodi
 {
 //------------------------------------------------------------------------------
 // OPRF IMPLEMENTATIONS
@@ -193,4 +193,4 @@ OPRF_Keypair KeyRotation::GetKey(int index)
     return keyList[index];
 }
 
-} // namespace libcpex
+} // namespace libjodi

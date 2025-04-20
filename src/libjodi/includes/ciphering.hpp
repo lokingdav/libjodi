@@ -3,7 +3,7 @@
 
 #include "base.hpp"
 
-namespace libcpex {
+namespace libjodi {
     class Ciphering {
         public:
             Ciphering();

@@ -1,38 +1,38 @@
 #include <chrono>
 
 #include <catch2/catch_test_macros.hpp>
-#include "../libcpex/libcpex.hpp"
+#include "../libjodi/libjodi.hpp"
 
-using namespace libcpex;
+using namespace libjodi;
 
 SCENARIO("OPRF protocol label generation", "[oprf]") {
     GlobalInitSodium();
     
-    auto keypair = libcpex::OPRF::Keygen();
+    auto keypair = libjodi::OPRF::Keygen();
 
     GIVEN("Any message") {
         string msg = "Hello World!";
 
         WHEN("blinded to a point on the EC curve by a Party A") {
-            auto b1 = libcpex::OPRF::Blind(msg);
+            auto b1 = libjodi::OPRF::Blind(msg);
             REQUIRE(b1.x.size() == 32);
             REQUIRE(b1.r.size() == 32);
 
             Bytes label;
 
             THEN("it should be evaluatable") {
-                auto eval = libcpex::OPRF::Evaluate(keypair, b1.x);
+                auto eval = libjodi::OPRF::Evaluate(keypair, b1.x);
                 REQUIRE(eval.fx.size() == 32);
                 REQUIRE(eval.vk.size() == 32);
 
                 THEN("it should be unblindable") {
-                    label = libcpex::OPRF::Unblind(eval, b1.r);
+                    label = libjodi::OPRF::Unblind(eval, b1.r);
                 }
             }
 
             WHEN("blinding is done by another Party B") {
                 THEN("blinding should not be deterministic") {
-                    auto b2 = libcpex::OPRF::Blind(msg);
+                    auto b2 = libjodi::OPRF::Blind(msg);
                     REQUIRE(b2.x.size() == 32);
                     REQUIRE(b2.r.size() == 32);
                     REQUIRE(b1.x != b2.x);
